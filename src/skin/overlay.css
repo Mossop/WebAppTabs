@@ -1,0 +1,9 @@
+#todos-tabbutton {
+  list-style-image: url('http://www.rememberthemilk.com/favicon.ico');
+}
+#todos-tabbutton > label {
+  display: none;
+}
+#todos-menuitem {
+  list-style-image: url('http://www.rememberthemilk.com/favicon.ico');
+}
