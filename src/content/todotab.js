@@ -40,7 +40,12 @@ var todotab = {
     this.initialized = true;
     this.strings = document.getElementById("todotab-strings");
     this.tabType = "contentTab";
-    this.options = { "background" : false , "contentPage" : "http://www.rememberthemilk.com/login/" };
+    this.options = { "background" : false , "contentPage" : "http://www.rememberthemilk.com/login/",
+    clickHandler: "specialTabs.siteClickHandler(event, todotab._siteRegExp)"};
+  },
+  get _siteRegExp() {
+    delete this._siteRegExp;
+    return this._siteRegExp = new RegExp("^http://www.rememberthemilk.com/");
   },
   onMenuItemCommand: function(evt) {
     document.getElementById('tabmail').openTab(this.tabType, this.options);
