@@ -1,4 +1,4 @@
-content   todotab   content/
-locale    todotab   en-US         locale/en-US/
-skin      todotab   classic/1.0   skin/
-overlay   chrome://messenger/content/messenger.xul  chrome://todotab/content/todotab.xul
+content   webtab   content/
+locale    webtab   en-US         locale/en-US/
+skin      webtab   classic/1.0   skin/
+overlay   chrome://messenger/content/messenger.xul  chrome://webtab/content/webtab.xul

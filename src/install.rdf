@@ -2,9 +2,9 @@
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#" 
  xmlns:em="http://www.mozilla.org/2004/em-rdf#">
   <Description about="urn:mozilla:install-manifest">
-    <em:id>todotab@momo</em:id>
-    <em:name>TODOsb</em:name>
-    <em:version>1.1</em:version>
+    <em:id>webtabs@momo</em:id>
+    <em:name>WebTabs</em:name>
+    <em:version>0.1</em:version>
     <em:creator>David Ascher</em:creator>
     <em:targetApplication>
       <Description>
