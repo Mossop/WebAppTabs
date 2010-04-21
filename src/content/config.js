@@ -7,7 +7,7 @@ Cu.import("resource:///modules/errUtils.js");
 
 function OnLoad() {
   try {
-    for (let [,tabDesc] in Iterator(parent.webtabs.tabDescsMap)) {
+    for (let [,tabDesc] in Iterator(parent.webtabs.tabDescsList)) {
       addRow(tabDesc);
     }
     addNewRow();
@@ -47,11 +47,10 @@ function doAdd() {
     let name = lastname.value;
     let lastinput = document.getElementById('lastinput');
     let url = lastinput.value;
-    dump("input url = " + url + '\n');
+    // Fixup URL (so www.foo.com will turn to http://www.foo.com)
     let URIFixup = Cc["@mozilla.org/docshell/urifixup;1"]
                            .getService(Ci.nsIURIFixup);
     url = URIFixup.createFixupURI(url, Ci.nsIURIFixup.FIXUP_FLAG_NONE).spec;
-    // Find real URL
     // Find favicon
     // argh.  part of browser, requires places.
     //let fs = Cc["@mozilla.org/browser/favicon-service;1"].
@@ -60,14 +59,9 @@ function doAdd() {
     //  .getService(Components.interfaces.nsIIOService);
     //let URI = ioService.newURI(url);
     //let favicon = fs.getFaviconForPage(URI);
-    //logObject(favicon);
     
     let favicon = url + '/favicon.ico'; // for demo purposes
 
-    //* mozilla/toolkit/components/places/public/nsIFaviconService.idl (View Hg log or Hg annotations)
-    //    o line 224 -- nsIURI getFaviconForPage(in nsIURI aPageURI); 
-
-    
     let desc = {name: name,
                 id: name,
                 regexp: new RegExp(),

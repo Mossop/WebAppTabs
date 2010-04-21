@@ -36,8 +36,7 @@
 Components.utils.import("resource:///modules/errUtils.js");
 var EXTPREFNAME = "extension.webtabs.data";
 
-var _initialTabData
- = [
+var _initialTabData = [
   {'name': 'NYTimes',
     'icon': 'http://www.nytimes.com/favicon.ico',
     "regexp": new RegExp(""),
@@ -69,6 +68,7 @@ var webtabs = {
     try {
       this.initialized = true;
       this.tabDescsMap = {};
+      this.tabDescsList = [];
       this.load();
       this.tabType = "contentTab";
     } catch (e) {
@@ -77,8 +77,11 @@ var webtabs = {
   },
 
   installTab: function(aDesc) {
-    if (! webtabs.tabDescsMap[aDesc['id']])
+    if (! webtabs.tabDescsMap[aDesc['id']]) {
       this.tabDescsMap[aDesc['id']] = aDesc;
+    }
+    this.tabDescsList.push(aDesc);
+
     let tabmailButtons = document.getElementById("tabmail-buttons");
     let button = document.createElement("toolbarbutton");
     button.setAttribute("id", aDesc['id']);
@@ -123,13 +126,14 @@ var webtabs = {
   },
   persist: function() {
     let jsondata = JSON.stringify(webtabs.tabDescsMap)
+    dump("persisting" + jsondata + '\n');
     Application.prefs.setValue(EXTPREFNAME, jsondata);
   },
   load: function() {
+  try {
     let pref, configdata;
     if (! Application.prefs.has(EXTPREFNAME)) {
-      configdata = _initialTabData
-;
+      configdata = _initialTabData;
     } else {
       pref = Application.prefs.get(EXTPREFNAME);
       configdata = JSON.parse(pref.value);
@@ -137,6 +141,10 @@ var webtabs = {
     for (let [,tabDesc] in Iterator(configdata)) {
       webtabs.installTab(tabDesc);
     }
+    logObject(webtabs.tabDescsList)
+  } catch (e) {
+    logException(e);
+  }
   }
 };
 window.addEventListener("load", function(evt) { webtabs.onLoad(evt); }, false);
