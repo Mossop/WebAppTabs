@@ -132,8 +132,9 @@ var webtabs = {
         background: false });
   },
   openTab: function(tabId) {
-    document.getElementById('tabmail').openTab("contentTab",
+    let info = document.getElementById('tabmail').openTab("contentTab",
         webtabs.tabDescsMap[tabId].options);
+    info.tabNode.image=webtabs.tabDescsMap[tabId].icon;
   },
   persist: function() {
     let jsondata = JSON.stringify(webtabs.tabDescsMap)
@@ -151,7 +152,6 @@ var webtabs = {
     for (let [,tabDesc] in Iterator(configdata)) {
       webtabs.installTab(tabDesc);
     }
-    logObject(webtabs.tabDescsList)
   } catch (e) {
     logException(e);
   }
