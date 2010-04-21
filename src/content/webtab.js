@@ -37,11 +37,19 @@ Components.utils.import("resource:///modules/errUtils.js");
 var EXTPREFNAME = "extension.webtabs.data";
 
 var _initialTabData = [
-  {'name': 'NYTimes',
-    'icon': 'http://www.nytimes.com/favicon.ico',
+  {'name': 'Facebook',
+    'icon': 'http://www.facebook.com/favicon.ico',
     "regexp": new RegExp(""),
     'options': { "background" : false ,
-    "contentPage" : "http://www.nytimes.com/",
+    "contentPage" : "http://www.facebook.com/",
+    "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
+    }
+  },
+  {'name': 'Wave',
+    'icon': 'http://wave.google.com/favicon.ico',
+    "regexp": new RegExp(""),
+    'options': { "background" : false ,
+    "contentPage" : "http://wave.google.com/",
     "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
     }
   },
@@ -53,11 +61,11 @@ var _initialTabData = [
     "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
     }
   },
-  {'name': 'BoingBoing',
-    'icon': 'http://www.boingboing.net/favicon.ico',
+  {'name': 'Planet Mozilla',
+    'icon': 'http://planet.mozilla.org/img/mozilla-16.png',
     "regexp": new RegExp(""),
     'options': { "background" : false ,
-    "contentPage" : "http://www.boingboing.net/",
+    "contentPage" : "http://planet.mozilla.org/",
     "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
     }
   }
