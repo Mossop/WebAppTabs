@@ -77,6 +77,9 @@ var webtabs = {
   },
 
   installTab: function(aDesc) {
+    if (! aDesc['id']) {
+      aDesc['id'] = aDesc['name'].replace(' ', '_', 'g');
+    }
     if (! webtabs.tabDescsMap[aDesc['id']]) {
       this.tabDescsMap[aDesc['id']] = aDesc;
     }
@@ -120,13 +123,12 @@ var webtabs = {
         clickHandler: "webtabs.clickHandlerInConfigurator(event)",
         background: false });
   },
-  openTab: function(aTabTypeName) {
-    document.getElementById('tabmail').openTab(this.tabType,
-        webtabs.tabDescsMap[aTabTypeName].options);
+  openTab: function(tabId) {
+    document.getElementById('tabmail').openTab("contentTab",
+        webtabs.tabDescsMap[tabId].options);
   },
   persist: function() {
     let jsondata = JSON.stringify(webtabs.tabDescsMap)
-    dump("persisting" + jsondata + '\n');
     Application.prefs.setValue(EXTPREFNAME, jsondata);
   },
   load: function() {
