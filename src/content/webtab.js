@@ -1,3 +1,10 @@
+/* TODO:
+  
+   figure out cmd-click
+   
+*/
+
+
 /* ***** BEGIN LICENSE BLOCK *****
  *   Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -87,9 +94,28 @@ var webtabs = {
       this.tabDescsList = [];
       this.load();
       this.tabType = "contentTab";
+      
+      this._origContentAreaClick = contentAreaClick;
+      window.contentAreaClick = this.newContentAreaClick;
     } catch (e) {
       logException(e);
     }
+  },
+  
+  newContentAreaClick: function(aEvent) {
+    // If you click in a link to a website we have a shortcut for, we load it in a tab
+    let href = hRefForClickEvent(aEvent);
+    for (let [, tabDesc] in Iterator(webtabs.tabDescsList)) {
+      if (href.indexOf(tabDesc['options']['contentPage']) == 0) {
+        tabDesc.options.contentPage = href;
+        let tabmail = document.getElementById('tabmail');
+        let info = tabmail.openTab("contentTab", tabDesc.options);
+        info.tabNode.image=tabDesc.icon;
+        aEvent.preventDefault()
+        return;
+      }
+    }
+    this._origContentAreaClick(aEvent);
   },
 
   installTab: function(aDesc) {
@@ -166,3 +192,5 @@ var webtabs = {
   }
 };
 window.addEventListener("load", function(evt) { webtabs.onLoad(evt); }, false);
+
+
