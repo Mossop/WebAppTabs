@@ -37,6 +37,14 @@ Components.utils.import("resource:///modules/errUtils.js");
 var EXTPREFNAME = "extension.webtabs.data";
 
 var _initialTabData = [
+  {'name': 'Google Calendar',
+    'icon': 'http://calendar.google.com/googlecalendar/images/favicon.ico',
+    "regexp": new RegExp(""),
+    'options': { "background" : false ,
+    "contentPage" : "http://calendar.google.com/",
+    "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
+    }
+  },
   {'name': 'Facebook',
     'icon': 'http://www.facebook.com/favicon.ico',
     "regexp": new RegExp(""),

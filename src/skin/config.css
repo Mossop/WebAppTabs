@@ -29,7 +29,8 @@ span.name {
 }
 
 span.url {
-  width: 15em;
+  width: 25em;
+  text-align: right;
   display: inline-block;
 }
 
