@@ -1,10 +1,3 @@
-/* TODO:
-
-   figure out cmd-click
-
-*/
-
-
 /* ***** BEGIN LICENSE BLOCK *****
  *   Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -42,88 +35,60 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/NetUtil.jsm");
 Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
 LogManager.createLogger(this, "webtab");
 
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Ce = Components.Exception;
+
 var EXTPREFNAME = "extension.webapptabs.data";
 
-var _initialTabData = [
-  {'name': 'Google Calendar',
-    'icon': 'http://calendar.google.com/googlecalendar/images/favicon.ico',
-    "regexp": new RegExp(""),
-    'options': { "background" : false ,
-    "contentPage" : "http://calendar.google.com/",
-    "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
-    }
-  },
-  {'name': 'Facebook',
-    'icon': 'http://www.facebook.com/favicon.ico',
-    "regexp": new RegExp(""),
-    'options': { "background" : false ,
-    "contentPage" : "http://www.facebook.com/",
-    "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
-    }
-  },
-  {'name': 'Wave',
-    'icon': 'http://wave.google.com/favicon.ico',
-    "regexp": new RegExp(""),
-    'options': { "background" : false ,
-    "contentPage" : "http://wave.google.com/",
-    "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
-    }
-  },
-  {'name': 'Twitter',
-    'icon': 'http://www.twitter.com/favicon.ico',
-    "regexp": new RegExp(""),
-    'options': { "background" : false ,
-    "contentPage" : "http://www.twitter.com/",
-    "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
-    }
-  },
-  {'name': 'Planet Mozilla',
-    'icon': 'http://planet.mozilla.org/img/mozilla-16.png',
-    "regexp": new RegExp(""),
-    'options': { "background" : false ,
-    "contentPage" : "http://planet.mozilla.org/",
-    "clickHandler": "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"
-    }
-  }
-];
+const WEBAPP_SCHEMA = 1;
+const DEFAULT_WEBAPPS = [{
+  'name': 'Google Calendar',
+  'href': 'https://calendar.google.com/',
+  'icon': 'https://calendar.google.com/googlecalendar/images/favicon.ico',
+}, {
+  'name': 'Facebook',
+  'href': 'https://www.facebook.com/',
+  'icon': 'https://www.facebook.com/favicon.ico',
+}, {
+  'name': 'Google+',
+  'href': 'https://plus.google.com/',
+  'icon': 'https://ssl.gstatic.com/s2/oz/images/favicon.ico',
+}, {
+  'name': 'Twitter',
+  'href': 'https://www.twitter.com',
+  'icon': 'https://www.twitter.com/favicon.ico',
+}];
 
 var webtabs = {
-  // True when loaded
-  initialized: false,
-  //
-  tabDescsMap: null,
   // A map from webapp ID to webapp descriptor
-  tabDescsList: null,
+  tabDescsMap: null,
   // A list of webapp descriptors
-  tabType: null,
+  tabDescsList: null,
 
   // A reference to the default window content area click handler
   _origContentAreaClick: null,
 
   onLoad: function() {
-    try {
-      this.initialized = true;
-      this.tabDescsMap = {};
-      this.tabDescsList = [];
-      this.load();
-      this.tabType = "contentTab";
+    this.tabDescsMap = {};
+    this.loadPrefs();
+    this.tabDescsList.forEach(function(aDesc) {
+      this.createWebAppButton(aDesc);
+    }, this);
 
-      this._origContentAreaClick = contentAreaClick;
-      window.contentAreaClick = this.newContentAreaClick;
-    } catch (e) {
-      logException(e);
-    }
+    this._origContentAreaClick = contentAreaClick;
+    window.contentAreaClick = this.newContentAreaClick;
   },
 
   onUnload: function() {
     window.contentAreaClick = this._origContentAreaClick;
 
     this.tabDescsList.forEach(function(aDesc) {
-      let button = document.getElementById(aDesc['id']);
-      button.parentNode.removeChild(button);
+      this.removeWebAppButton(aDesc);
     }, this);
   },
 
@@ -143,80 +108,88 @@ var webtabs = {
     this._origContentAreaClick(aEvent);
   },
 
-  installTab: function(aDesc) {
-    if (! aDesc['id']) {
-      aDesc['id'] = aDesc['name'].replace(' ', '_', 'g');
+  createWebAppButton: function(aDesc) {
+    if (!aDesc.id) {
+      aDesc.id = aDesc.name.replace(' ', '_', 'g');
     }
-    if (! webtabs.tabDescsMap[aDesc['id']]) {
-      this.tabDescsMap[aDesc['id']] = aDesc;
+
+    if (!webtabs.tabDescsMap[aDesc.id]) {
+      this.tabDescsMap[aDesc.id] = aDesc;
     }
-    this.tabDescsList.push(aDesc);
 
     let tabmailButtons = document.getElementById("tabmail-buttons");
     let button = document.createElement("toolbarbutton");
-    button.setAttribute("id", aDesc['id']);
+    button.setAttribute("id", aDesc.id);
     button.setAttribute("class", "webtab");
-    button.setAttribute("style", "list-style-image: url('" + aDesc["icon"] + "')");
+    button.setAttribute("style", "list-style-image: url('" + aDesc.icon + "')");
     tabmailButtons.appendChild(button);
 
     button.addEventListener("command", function() {
-      webtabs.openTab(aDesc['id']);
+      webtabs.openTab(aDesc);
     }, false);
   },
 
-  uninstallTab: function(id) {
-    if (! webtabs.tabDescsMap[id])
-      return;
-    // remove button from tabuttons
-    let button = document.getElementById(id);
-    button.parentNode.removeChild(button);
-    // remove from data structure
-    delete this.tabDescsMap[id];
-    webtabs.persist();
+  removeWebAppButton: function(aDesc) {
+    let button = document.getElementById(aDesc.id);
+    if (button)
+      button.parentNode.removeChild(button);
+    else
+      ERROR("Missing webapp button for " + aDesc.name);
   },
 
-  addWebTabToConfiguration: function(aDesc) {
+  openTab: function(aDesc) {
+    let url = NetUtil.newURI(aDesc.href);
+    let regex = new RegExp("^http[s]?://" + url.hostname + "/");
 
+    let tabmail = document.getElementById('tabmail');
+    let info = tabmail.openTab("contentTab", {
+      contentPage: aDesc.href,
+      clickHandler: "return true;"
+    });
+
+    info.tabNode.image = aDesc.icon;
+
+    info.browser.addEventListener("click", function(aEvent) {
+      specialTabs.siteClickHandler(aEvent, regex);
+    }, false);
   },
 
-  removeWebTab: function(aDesc) {
-
+  siteClickHandler: function(aEvent) {
   },
 
-  clickHandlerInConfigurator: function(aEvent) {
-    //event.preventDefault();
-    return false;
-  },
-  OpenConfigurationTab: function() {
-    document.getElementById('tabmail').openTab("chromeTab",
-      { chromePage: "chrome://webtab/content/config.html",
-        clickHandler: "webtabs.clickHandlerInConfigurator(event)",
-        background: false });
-  },
-  openTab: function(tabId) {
-    let info = document.getElementById('tabmail').openTab("contentTab",
-        webtabs.tabDescsMap[tabId].options);
-    info.tabNode.image=webtabs.tabDescsMap[tabId].icon;
-  },
-  persist: function() {
-    let jsondata = JSON.stringify(webtabs.tabDescsMap)
+  persistPrefs: function() {
+    let jsondata = JSON.stringify({
+      schema: WEBAPP_SCHEMA,
+      webapps: this.tabDescsList,
+    })
     Application.prefs.setValue(EXTPREFNAME, jsondata);
   },
-  load: function() {
-  try {
-    let pref, configdata;
-    if (! Application.prefs.has(EXTPREFNAME)) {
-      configdata = _initialTabData;
-    } else {
-      pref = Application.prefs.get(EXTPREFNAME);
-      configdata = JSON.parse(pref.value);
+
+  loadPrefs: function() {
+    try {
+      if (Application.prefs.has(EXTPREFNAME)) {
+        let data = JSON.parse(Application.prefs.get(EXTPREFNAME).value);
+        let schema = 0;
+        if ("schema" in data)
+          schema = data.schema;
+
+        switch (schema) {
+        case WEBAPP_SCHEMA:
+          this.tabDescsList = data.webapps;
+          break;
+        default:
+          throw new Ce("Unknown webapps data schema " + schema);
+        }
+
+        return;
+      }
     }
-    for (let [,tabDesc] in Iterator(configdata)) {
-      webtabs.installTab(tabDesc);
+    catch (e) {
+      ERROR("Failed to read webapps from config", e);
     }
-  } catch (e) {
-    logException(e);
-  }
+
+    this.tabDescsList = DEFAULT_WEBAPPS;
+    this.persistPrefs();
   }
 };
 
