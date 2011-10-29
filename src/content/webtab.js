@@ -1,7 +1,7 @@
 /* TODO:
-  
+
    figure out cmd-click
-   
+
 */
 
 
@@ -12,7 +12,7 @@
  * 1.1 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
@@ -26,6 +26,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *   Dave Townsend <dtownsend@oxymoronical.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,10 +39,13 @@
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the MPL, the GPL or the LGPL.
- * 
+ *
  * ***** END LICENSE BLOCK ***** */
-Components.utils.import("resource:///modules/errUtils.js");
-var EXTPREFNAME = "extension.webtabs.data";
+
+Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
+LogManager.createLogger(this, "webtab");
+
+var EXTPREFNAME = "extension.webapptabs.data";
 
 var _initialTabData = [
   {'name': 'Google Calendar',
@@ -87,21 +91,42 @@ var _initialTabData = [
 ];
 
 var webtabs = {
-  onLoad: function(evt) {
+  // True when loaded
+  initialized: false,
+  //
+  tabDescsMap: null,
+  // A map from webapp ID to webapp descriptor
+  tabDescsList: null,
+  // A list of webapp descriptors
+  tabType: null,
+
+  // A reference to the default window content area click handler
+  _origContentAreaClick: null,
+
+  onLoad: function() {
     try {
       this.initialized = true;
       this.tabDescsMap = {};
       this.tabDescsList = [];
       this.load();
       this.tabType = "contentTab";
-      
+
       this._origContentAreaClick = contentAreaClick;
       window.contentAreaClick = this.newContentAreaClick;
     } catch (e) {
       logException(e);
     }
   },
-  
+
+  onUnload: function() {
+    window.contentAreaClick = this._origContentAreaClick;
+
+    this.tabDescsList.forEach(function(aDesc) {
+      let button = document.getElementById(aDesc['id']);
+      button.parentNode.removeChild(button);
+    }, this);
+  },
+
   newContentAreaClick: function(aEvent) {
     // If you click in a link to a website we have a shortcut for, we load it in a tab
     let href = hRefForClickEvent(aEvent);
@@ -130,12 +155,15 @@ var webtabs = {
     let tabmailButtons = document.getElementById("tabmail-buttons");
     let button = document.createElement("toolbarbutton");
     button.setAttribute("id", aDesc['id']);
-    button.setAttribute("oncommand", "webtabs.openTab('" + aDesc['id']+ "')");
     button.setAttribute("class", "webtab");
     button.setAttribute("style", "list-style-image: url('" + aDesc["icon"] + "')");
     tabmailButtons.appendChild(button);
+
+    button.addEventListener("command", function() {
+      webtabs.openTab(aDesc['id']);
+    }, false);
   },
-  
+
   uninstallTab: function(id) {
     if (! webtabs.tabDescsMap[id])
       return;
@@ -146,15 +174,15 @@ var webtabs = {
     delete this.tabDescsMap[id];
     webtabs.persist();
   },
-  
+
   addWebTabToConfiguration: function(aDesc) {
-    
+
   },
 
   removeWebTab: function(aDesc) {
-    
+
   },
-  
+
   clickHandlerInConfigurator: function(aEvent) {
     //event.preventDefault();
     return false;
@@ -191,6 +219,13 @@ var webtabs = {
   }
   }
 };
-window.addEventListener("load", function(evt) { webtabs.onLoad(evt); }, false);
 
+var OverlayListener = {
+  load: function() {
+    webtabs.onLoad();
+  },
 
+  unload: function() {
+    webtabs.onUnload();
+  }
+};

@@ -1,4 +1,3 @@
-content   webtab   content/
-locale    webtab   en-US         locale/en-US/
-skin      webtab   classic/1.0   skin/
-overlay   chrome://messenger/content/messenger.xul  chrome://webtab/content/webtab.xul
+content   webapptabs   content/
+locale    webapptabs   en-US         locale/en-US/
+skin      webapptabs   classic/1.0   skin/

@@ -3,6 +3,7 @@
  xmlns:em="http://www.mozilla.org/2004/em-rdf#">
   <Description about="urn:mozilla:install-manifest">
     <em:id>webapptabs@oxymoronical.com</em:id>
+    <em:bootstrap>true</em:bootstrap>
 
     <em:name>WebApp Tabs</em:name>
     <em:version>0.1</em:version>
