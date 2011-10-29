@@ -122,6 +122,7 @@ var webtabs = {
     button.setAttribute("id", aDesc.id);
     button.setAttribute("class", "webtab");
     button.setAttribute("style", "list-style-image: url('" + aDesc.icon + "')");
+    button.setAttribute("tooltiptext", aDesc.name);
     tabmailButtons.appendChild(button);
 
     button.addEventListener("command", function() {
