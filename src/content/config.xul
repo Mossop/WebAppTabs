@@ -44,7 +44,13 @@
         onload="config.load()">
   <script type="text/javascript" src="config.js"/>
 
-  <richlistbox id="list_webapps" seltype="single" onselect="config.select()" flex="1"/>
+  <richlistbox id="list_webapps" seltype="single" flex="1"
+               onselect="config.select()"
+               ondragstart="config.dragStart(event)"
+               ondragenter="config.dragEnter(event)"
+               ondragover="config.dragOver(event)"
+               ondrop="config.drop(event)"
+               ondragend="config.dragEnd(event)"/>
 
   <hbox>
     <grid flex="1">

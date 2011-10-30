@@ -12,3 +12,11 @@ richlistitem {
   height: 16px;
   margin: 5px;
 }
+
+richlistitem[dragpos=before] {
+  border-top: 2px solid black;
+}
+
+richlistitem[dragpos=after] {
+  border-bottom: 2px solid black;
+}
