@@ -221,7 +221,6 @@ const webtabs = {
           info.browser.removeProgressListener(listener);
 
           aDesc.icon = icon;
-          LOG("Got icon " + aDesc.icon);
           ConfigManager.persistPrefs();
 
           let button = document.getElementById(aDesc.id);
