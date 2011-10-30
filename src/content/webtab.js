@@ -38,47 +38,29 @@
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
 LogManager.createLogger(this, "webtab");
+Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Ce = Components.Exception;
+const Cr = Components.results;
 
-var EXTPREFNAME = "extension.webapptabs.data";
-
-const WEBAPP_SCHEMA = 1;
-const DEFAULT_WEBAPPS = [{
-  'name': 'Google Calendar',
-  'href': 'https://calendar.google.com/',
-  'icon': 'https://calendar.google.com/googlecalendar/images/favicon.ico',
-}, {
-  'name': 'Facebook',
-  'href': 'https://www.facebook.com/',
-  'icon': 'https://www.facebook.com/favicon.ico',
-}, {
-  'name': 'Google+',
-  'href': 'https://plus.google.com/',
-  'icon': 'https://ssl.gstatic.com/s2/oz/images/favicon.ico',
-}, {
-  'name': 'Twitter',
-  'href': 'https://www.twitter.com',
-  'icon': 'https://www.twitter.com/favicon.ico',
-}];
-
-var webtabs = {
-  // A list of webapp descriptors
-  webappList: null,
+const webtabs = {
   // A WeakMap from webapp to tab
   webappTabMap: null,
+  buttons: null,
 
   // A reference to the default window content area click handler
   _origContentAreaClick: null,
 
   onLoad: function() {
     this.webappTabMap = new WeakMap();
-    this.loadPrefs();
-    this.webappList.forEach(function(aDesc) {
+    this.buttons = [];
+    ConfigManager.webappList.forEach(function(aDesc) {
       this.createWebAppButton(aDesc);
     }, this);
+
+    ConfigManager.addChangeListener(this.configChanged);
 
     this._origContentAreaClick = contentAreaClick;
     window.contentAreaClick = this.newContentAreaClick;
@@ -87,7 +69,9 @@ var webtabs = {
   onUnload: function() {
     window.contentAreaClick = this._origContentAreaClick;
 
-    this.webappList.forEach(function(aDesc) {
+    ConfigManager.removeChangeListener(this.configChanged);
+
+    ConfigManager.webappList.forEach(function(aDesc) {
       let info = this.getTabInfoForWebApp(aDesc);
       if (info)
         document.getElementById('tabmail').closeTab(info, true);
@@ -96,10 +80,50 @@ var webtabs = {
     }, this);
   },
 
+  // Called without a proper this
+  configChanged: function() {
+    webtabs.updateWebAppButtons();
+  },
+
+  updateWebAppButtons: function() {
+    // Delete any buttons that are no longer present in the config
+    let bpos = 0;
+    while (bpos < this.buttons.length) {
+      let id = this.buttons[bpos].id;
+      if (!ConfigManager.webappList.some(function(aDesc) aDesc.id == id)) {
+        let button = this.buttons[bpos];
+        let info = this.getTabInfoForWebApp(button);
+        if (info)
+          document.getElementById('tabmail').closeTab(info, true);
+
+        button.parentNode.removeChild(button);
+        this.buttons.splice(bpos, 1);
+      }
+      else {
+        bpos++;
+      }
+    }
+
+    // TODO Reorder buttons to match the order in the config (#9)
+
+    // Create any buttons that are now in the config
+    bpos = 0;
+    let wpos = 0;
+    while (wpos < ConfigManager.webappList.length) {
+      if (bpos == this.buttons.length ||
+          this.buttons[bpos].id != ConfigManager.webappList[wpos].id) {
+        this.createWebAppButton(ConfigManager.webappList[wpos], this.buttons[bpos]);
+      }
+
+      bpos++;
+      wpos++;
+    }
+  },
+
   newContentAreaClick: function(aEvent) {
     // If you click in a link to a website we have a shortcut for, we load it in a tab
     let href = hRefForClickEvent(aEvent);
-    for (let [, tabDesc] in Iterator(webtabs.webappList)) {
+    for (let [, tabDesc] in Iterator(ConfigManager.webappList)) {
       if (href.indexOf(tabDesc['options']['contentPage']) == 0) {
         tabDesc.options.contentPage = href;
         let tabmail = document.getElementById('tabmail');
@@ -112,18 +136,15 @@ var webtabs = {
     this._origContentAreaClick(aEvent);
   },
 
-  createWebAppButton: function(aDesc) {
-    if (!aDesc.id) {
-      aDesc.id = aDesc.name.replace(' ', '_', 'g');
-    }
-
+  createWebAppButton: function(aDesc, aBefore) {
     let tabmailButtons = document.getElementById("tabmail-buttons");
     let button = document.createElement("toolbarbutton");
     button.setAttribute("id", aDesc.id);
     button.setAttribute("class", "webtab");
     button.setAttribute("style", "list-style-image: url('" + aDesc.icon + "')");
     button.setAttribute("tooltiptext", aDesc.name);
-    tabmailButtons.appendChild(button);
+    tabmailButtons.insertBefore(button, aBefore);
+    button.desc = aDesc;
 
     button.addEventListener("command", function() {
       try {
@@ -133,6 +154,14 @@ var webtabs = {
         ERROR("Failed to open webapp", e);
       }
     }, false);
+
+    if (aBefore) {
+      let pos = this.buttons.indexOf(aBefore);
+      this.buttons.splice(pos, 0, button);
+    }
+    else {
+      this.buttons.push(button);
+    }
   },
 
   removeWebAppButton: function(aDesc) {
@@ -177,7 +206,6 @@ var webtabs = {
       contentPage: aDesc.href,
       clickHandler: "return true;"
     });
-    LOG(info);
 
     this.webappTabMap.set(aDesc, info);
 
@@ -185,44 +213,6 @@ var webtabs = {
       specialTabs.siteClickHandler(aEvent, regex);
     }, false);
   },
-
-  siteClickHandler: function(aEvent) {
-  },
-
-  persistPrefs: function() {
-    let jsondata = JSON.stringify({
-      schema: WEBAPP_SCHEMA,
-      webapps: this.webappList,
-    })
-    Application.prefs.setValue(EXTPREFNAME, jsondata);
-  },
-
-  loadPrefs: function() {
-    try {
-      if (Application.prefs.has(EXTPREFNAME)) {
-        let data = JSON.parse(Application.prefs.get(EXTPREFNAME).value);
-        let schema = 0;
-        if ("schema" in data)
-          schema = data.schema;
-
-        switch (schema) {
-        case WEBAPP_SCHEMA:
-          this.webappList = data.webapps;
-          break;
-        default:
-          throw new Ce("Unknown webapps data schema " + schema);
-        }
-
-        return;
-      }
-    }
-    catch (e) {
-      ERROR("Failed to read webapps from config", e);
-    }
-
-    this.webappList = DEFAULT_WEBAPPS;
-    this.persistPrefs();
-  }
 };
 
 var OverlayListener = {

@@ -4,6 +4,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>webapptabs@oxymoronical.com</em:id>
     <em:bootstrap>true</em:bootstrap>
+    <em:optionsURL>chrome://webapptabs/content/config.xul</em:optionsURL>
 
     <em:name>WebApp Tabs</em:name>
     <em:version>0.1</em:version>

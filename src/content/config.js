@@ -1,78 +1,109 @@
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
+/* ***** BEGIN LICENSE BLOCK *****
+ *   Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is WebTabs.
+ *
+ * The Initial Developer of the Original Code is WebApp Tabs.
+ * Dave Townsend <dtownsend@oxymoronical.com>
+ * Portions created by the Initial Developer are Copyright (C) 2011
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   David Ascher.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-Cu.import("resource:///modules/errUtils.js");
+Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
+LogManager.createLogger(this, "config");
+Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Ce = Components.Exception;
 
-function OnLoad() {
-  try {
-    for (let [,tabDesc] in Iterator(parent.webtabs.tabDescsList)) {
-      addRow(tabDesc);
-    }
-    addNewRow();
-  } catch (e) {
-    logException(e);
-  }
-}
+const EXTPREFNAME = "extension.webapptabs.webapps";
 
+const config = {
+  list: null,
 
-function addRow(tabDesc) {
-  let list = $("#list");
-  //let name = tabDesc["name"];
-  let id = tabDesc['id'];
-  let url = tabDesc["options"]["contentPage"];
-  let frag = "<li id='" + id + "' class='webtab'><span class='url'>" + url +
-    "</span><a class='remove' onclick='doRemove(\""+id+"\")'>remove</a></input></li>"
-  list.append(frag);
-}
+  load: function() {
+    this.list = document.getElementById("list_webapps");
 
-function addNewRow() {
-  let list = $("#body");
-  list.append("<span id='lastrow'>Add a new tab for the website:<input id='lastinput' onkeydown='doKeyDown(event)' class='url' type='text size='80'></input><button onclick='doAdd()'>Add</button></span>")
-}
+    ConfigManager.webappList.forEach(function(aDesc) {
+      this.addWebAppItem(aDesc);
+    }, this);
 
+    this.input();
+    this.select();
+  },
 
-function doRemove(id) {
-  let row = document.getElementById(id);
-  row.parentNode.removeChild(row);
-  parent.webtabs.uninstallTab(id);
-}
+  add: function() {
+    let href = document.getElementById("txt_href").value;
+    let URIFixup = Cc["@mozilla.org/docshell/urifixup;1"].
+                   getService(Ci.nsIURIFixup);
+    href = URIFixup.createFixupURI(href, Ci.nsIURIFixup.FIXUP_FLAG_NONE).spec;
 
-function doKeyDown(event) {
-  if (event.keyCode == 13) doAdd();
-}
+    let desc = {
+      name: document.getElementById("txt_name").value,
+      href: href,
+      icon: "http://getfavicon.appspot.com/" + href
+    };
 
-function doAdd() {
-  try {
-    let list = $("#list");
-    let lastinput = document.getElementById('lastinput');
-    let url = lastinput.value;
-    // Fixup URL (so www.foo.com will turn to http://www.foo.com)
-    let URIFixup = Cc["@mozilla.org/docshell/urifixup;1"]
-                           .getService(Ci.nsIURIFixup);
-    url = URIFixup.createFixupURI(url, Ci.nsIURIFixup.FIXUP_FLAG_NONE).spec;
-    // Find favicon
-    // argh.  part of browser, requires places.
-    //let fs = Cc["@mozilla.org/browser/favicon-service;1"].
-    //  getService(Ci.nsIFaviconService);
-    //let ioService = Components.classes["@mozilla.org/network/io-service;1"]  
-    //  .getService(Components.interfaces.nsIIOService);
-    //let URI = ioService.newURI(url);
-    //let favicon = fs.getFaviconForPage(URI);
-    
-    let favicon = "http://getfavicon.appspot.com/" + url // for demo purposes
-    lastinput.value = '';
+    document.getElementById("txt_name").value = "";
+    document.getElementById("txt_href").value = "";
 
-    let desc = {id: url,
-                regexp: new RegExp(),
-                options: {contentPage: url,
-                backround: false, clickHandler: "specialTabs.siteClickHandler(event, webtabs.tabDescs['regexp'])"},
-                icon: favicon}
-    addRow(desc);
-    parent.webtabs.installTab(desc);
-    parent.webtabs.persist();
-  } catch(e) {
-    logException(e);
-  }
-}
+    this.addWebAppItem(desc);
+    ConfigManager.webappList.push(desc);
+    ConfigManager.persistPrefs();
+  },
+
+  remove: function() {
+    let item = this.list.selectedItem;
+    let pos = ConfigManager.webappList.indexOf(item.desc);
+    ConfigManager.webappList.splice(pos, 1);
+    this.list.removeChild(item);
+    ConfigManager.persistPrefs();
+  },
+
+  input: function() {
+    let enabled = document.getElementById("txt_name").value != "" &&
+                  document.getElementById("txt_href").value != "";
+    document.getElementById("btn_add").disabled = !enabled;
+  },
+
+  select: function() {
+    document.getElementById("btn_remove").disabled = !this.list.selectedItem;
+  },
+
+  addWebAppItem: function(aDesc) {
+    let item = document.createElement("richlistitem");
+    item.setAttribute("id", aDesc.id);
+    item.setAttribute("icon", aDesc.icon);
+    item.setAttribute("name", aDesc.name);
+    item.setAttribute("href", aDesc.href);
+    this.list.appendChild(item);
+    item.desc = aDesc;
+  },
+};

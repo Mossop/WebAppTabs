@@ -36,6 +36,8 @@
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
+const Ce = Components.Exception;
+const Cr = Components.results;
 
 const OVERLAYS = {
   "chrome://messenger/content/messenger.xul": {
@@ -73,6 +75,7 @@ function shutdown(aParams, aReason) {
   // Unload and remove the overlay manager
   OverlayManager.unload();
   Components.utils.unload("resource://webapptabs/modules/OverlayManager.jsm");
+  Components.utils.unload("resource://webapptabs/modules/ConfigManager.jsm");
   Components.utils.unload("resource://webapptabs/modules/LogManager.jsm");
 
   // Remove our chrome registration

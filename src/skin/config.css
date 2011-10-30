@@ -1,63 +1,14 @@
-body {
-  background: white;
+row {
+  -moz-box-align: center;
 }
 
-#list {
-  list-style: none;
+richlistitem {
+  -moz-box-align: center;
+  border-bottom: 1px dotted grey;
 }
 
-.webtab {
-  padding-left: 3em;
-  padding: .5em;
-}
-
-.heading {
-  font-size: large;
-  padding: 1em;
-  padding-left: 3em;
-  padding-bottom: 2em;
-}
-
-.main {
-  padding-left: 3em;
-}
-
-span.name {
-  width: 10em;
-  display: inline-block;
-  font-weight: bold;
-}
-
-span.url {
-  width: 25em;
-  text-align: right;
-  display: inline-block;
-}
-
-a.remove {
-  font-weight: normal;
-  color: darkred;
-  font-size: small;
-  padding-left: 1em;
-}
-
-a.remove:hover {
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-#lastrow {
-  padding: 1em;
-  padding-left: 3em;
-  display: block;
-}
-
-#lastname{
-  display: inline-block;
-  width: 10em;
-}
-#lastinput{
-  display: inline-block;
-  width: 30em;
-  padding-right: 1em;
+.webapp-icon {
+  width: 16px;
+  height: 16px;
+  margin: 5px;
 }
