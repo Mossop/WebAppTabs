@@ -35,6 +35,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
 LogManager.createLogger(this, "webtab");
@@ -141,7 +142,7 @@ const webtabs = {
     let button = document.createElement("toolbarbutton");
     button.setAttribute("id", aDesc.id);
     button.setAttribute("class", "webtab");
-    button.setAttribute("style", "list-style-image: url('" + aDesc.icon + "')");
+    button.setAttribute("image", aDesc.icon);
     button.setAttribute("tooltiptext", aDesc.name);
     this.buttonContainer.insertBefore(button, aBefore);
     button.desc = aDesc;
@@ -208,6 +209,35 @@ const webtabs = {
     info.browser.addEventListener("click", function(aEvent) {
       specialTabs.siteClickHandler(aEvent, regex);
     }, false);
+
+    let listener = {
+      onStateChange: function(aWebProgress, aRequest, aState, aStatus) {
+        if ((aState & Ci.nsIWebProgressListener.STATE_IS_REQUEST) &&
+            (aState & Ci.nsIWebProgressListener.STATE_STOP)) {
+          let icon = info.tabNode.getAttribute("image");
+          if (!icon)
+            return;
+
+          info.browser.removeProgressListener(listener);
+
+          aDesc.icon = icon;
+          LOG("Got icon " + aDesc.icon);
+          ConfigManager.persistPrefs();
+
+          let button = document.getElementById(aDesc.id);
+          button.setAttribute("image", aDesc.icon);
+        }
+      },
+
+      onLocationChange: function() { },
+      onProgressChange: function() { },
+      onSecurityChange: function() { },
+      onStatusChange: function() { },
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
+                                             Ci.nsISupportsWeakReference])
+    };
+
+    info.browser.addProgressListener(listener);
   },
 };
 
