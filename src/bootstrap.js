@@ -72,6 +72,15 @@ function shutdown(aParams, aReason) {
   if (aReason == APP_SHUTDOWN)
     return;
 
+  // Close any of our UI windows
+  let windows = Services.wm.getEnumerator(null);
+  while (windows.hasMoreElements()) {
+    let domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
+    let spec = domWindow.location.toString();
+    if (spec.substring(0, 20) == "chrome://webapptabs/")
+      domWindow.close();
+  }
+
   // Unload and remove the overlay manager
   OverlayManager.unload();
   Components.utils.unload("resource://webapptabs/modules/OverlayManager.jsm");
