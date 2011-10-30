@@ -35,12 +35,17 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
+<!DOCTYPE window [
+<!ENTITY % configDTD SYSTEM "chrome://webapptabs/locale/config.dtd">
+%configDTD;
+]>
+
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xml-stylesheet href="chrome://webapptabs/content/config.css"?>
 <?xml-stylesheet href="chrome://webapptabs/skin/config.css"?>
 
 <window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        title="WebApp Tabs Options" style="width: 400px; height: 300px;"
+        title="&title;" style="width: 400px; height: 300px;"
         onload="config.load()">
   <script type="text/javascript" src="config.js"/>
 
@@ -60,19 +65,19 @@
       </columns>
       <rows>
         <row>
-          <label value="Name:"/>
-          <textbox id="txt_name" oninput="config.input()" flex="1" placeholder="Enter the website's name…"/>
+          <label value="&lbl.name;"/>
+          <textbox id="txt_name" oninput="config.input()" flex="1" placeholder="&txt.name.placeholder;"/>
         </row>
         <row>
-          <label value="Address:"/>
-          <textbox id="txt_href" oninput="config.input()" flex="1" placeholder="Enter the website's address…"/>
+          <label value="&lbl.href;"/>
+          <textbox id="txt_href" oninput="config.input()" flex="1" placeholder="&txt.href.placeholder;"/>
         </row>
       </rows>
     </grid>
 
     <vbox>
-      <button id="btn_add" oncommand="config.add()" label="Add"/>
-      <button id="btn_remove" oncommand="config.remove()" label="Remove"/>
+      <button id="btn_add" oncommand="config.add()" label="&btn.add.label;"/>
+      <button id="btn_remove" oncommand="config.remove()" label="&btn.remove.label;"/>
     </vbox>
   </hbox>
 </window>
