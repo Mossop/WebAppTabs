@@ -11,7 +11,7 @@ There are many extensions for viewing webpages in Thunderbird. This isn't what
 I think Thunderbird is for, webpages can be viewed in Firefox or whatever
 browser you prefer. Thunderbird is my communications centre and I use it to
 display communications related webapps like Google+, Google Reader,
-Google Groups, etc. and I wnt to be able to use those easily, opening links in
+Google Groups, etc. and I want to be able to use those easily, opening links in
 the default browser where relevant.
 
 The main goals are:
