@@ -5,6 +5,7 @@ row {
 richlistitem {
   -moz-box-align: center;
   border-bottom: 1px dotted grey;
+  border-top: 2px solid transparent;
 }
 
 .webapp-icon {
