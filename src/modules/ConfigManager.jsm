@@ -80,6 +80,11 @@ const ConfigManager = {
   },
 
   persistPrefs: function() {
+    this.webappList.forEach(function(aDesc) {
+      if (!aDesc.id)
+        aDesc.id = aDesc.name.replace(' ', '_', 'g');
+    });
+
     let jsondata = JSON.stringify({
       schema: WEBAPP_SCHEMA,
       webapps: this.webappList,

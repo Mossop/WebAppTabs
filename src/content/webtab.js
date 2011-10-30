@@ -48,14 +48,18 @@ const Cr = Components.results;
 const webtabs = {
   // A WeakMap from webapp to tab
   webappTabMap: null,
-  buttons: null,
+  // The UI element that contains the webapp buttons
+  buttonContainer: null,
 
   // A reference to the default window content area click handler
   _origContentAreaClick: null,
 
   onLoad: function() {
     this.webappTabMap = new WeakMap();
-    this.buttons = [];
+    this.buttonContainer = document.createElement("hbox");
+    this.buttonContainer.setAttribute("id", "webapptabs-buttons");
+    document.getElementById("tabmail-buttons").appendChild(this.buttonContainer);
+
     ConfigManager.webappList.forEach(function(aDesc) {
       this.createWebAppButton(aDesc);
     }, this);
@@ -72,12 +76,10 @@ const webtabs = {
     ConfigManager.removeChangeListener(this.configChanged);
 
     ConfigManager.webappList.forEach(function(aDesc) {
-      let info = this.getTabInfoForWebApp(aDesc);
-      if (info)
-        document.getElementById('tabmail').closeTab(info, true);
-
       this.removeWebAppButton(aDesc);
     }, this);
+
+    this.buttonContainer.parentNode.removeChild(this.buttonContainer);
   },
 
   // Called without a proper this
@@ -86,37 +88,36 @@ const webtabs = {
   },
 
   updateWebAppButtons: function() {
-    // Delete any buttons that are no longer present in the config
-    let bpos = 0;
-    while (bpos < this.buttons.length) {
-      let id = this.buttons[bpos].id;
-      if (!ConfigManager.webappList.some(function(aDesc) aDesc.id == id)) {
-        let button = this.buttons[bpos];
-        let info = this.getTabInfoForWebApp(button);
-        if (info)
-          document.getElementById('tabmail').closeTab(info, true);
+    let before = this.buttonContainer.firstChild;
 
-        button.parentNode.removeChild(button);
-        this.buttons.splice(bpos, 1);
-      }
-      else {
-        bpos++;
-      }
-    }
+    // Loop through all webapps, for each either move it to the current position
+    // or create it
+    ConfigManager.webappList.forEach(function(aDesc) {
+      if (before) {
+        // Common case is the button will be the next in the list
+        if (aDesc.id == before.id) {
+          before = before.nextSibling;
+          return;
+        }
 
-    // TODO Reorder buttons to match the order in the config (#9)
-
-    // Create any buttons that are now in the config
-    bpos = 0;
-    let wpos = 0;
-    while (wpos < ConfigManager.webappList.length) {
-      if (bpos == this.buttons.length ||
-          this.buttons[bpos].id != ConfigManager.webappList[wpos].id) {
-        this.createWebAppButton(ConfigManager.webappList[wpos], this.buttons[bpos]);
+        let found = before.nextSibling;
+        while (found && found.id != aDesc.id)
+          found = found.nextSibling;
+        if (found) {
+          found.parentNode.insertBefore(found, before);
+          return;
+        }
       }
 
-      bpos++;
-      wpos++;
+      // Webapp doesn't exist, create it
+      this.createWebAppButton(aDesc);
+    }, this);
+
+    // Remove any remaining buttons
+    while (before) {
+      let next = before.nextSibling;
+      this.removeWebAppButton(before.desc);
+      before = next;
     }
   },
 
@@ -137,13 +138,12 @@ const webtabs = {
   },
 
   createWebAppButton: function(aDesc, aBefore) {
-    let tabmailButtons = document.getElementById("tabmail-buttons");
     let button = document.createElement("toolbarbutton");
     button.setAttribute("id", aDesc.id);
     button.setAttribute("class", "webtab");
     button.setAttribute("style", "list-style-image: url('" + aDesc.icon + "')");
     button.setAttribute("tooltiptext", aDesc.name);
-    tabmailButtons.insertBefore(button, aBefore);
+    this.buttonContainer.insertBefore(button, aBefore);
     button.desc = aDesc;
 
     button.addEventListener("command", function() {
@@ -154,17 +154,13 @@ const webtabs = {
         ERROR("Failed to open webapp", e);
       }
     }, false);
-
-    if (aBefore) {
-      let pos = this.buttons.indexOf(aBefore);
-      this.buttons.splice(pos, 0, button);
-    }
-    else {
-      this.buttons.push(button);
-    }
   },
 
   removeWebAppButton: function(aDesc) {
+    let info = this.getTabInfoForWebApp(aDesc);
+    if (info)
+      document.getElementById('tabmail').closeTab(info, true);
+
     let button = document.getElementById(aDesc.id);
     if (button)
       button.parentNode.removeChild(button);
