@@ -94,6 +94,8 @@ const OverlayManagerInternal = {
   },
 
   createWindowEntry: function(aDOMWindow) {
+    aDOMWindow.addEventListener("unload", this, false);
+
     let spec = aDOMWindow.location.toString();
     LOG("Creating window entry for " + spec);
     if (this.windowEntryMap.has(aDOMWindow))
@@ -125,6 +127,8 @@ const OverlayManagerInternal = {
   },
 
   destroyWindowEntry: function(aDOMWindow) {
+    aDOMWindow.removeEventListener("unload", this, false);
+
     let spec = aDOMWindow.location.toString();
     LOG("Destroying window entry for " + spec);
     if (!(spec in this.windowEntries) || !this.windowEntryMap.has(aDOMWindow))
@@ -232,32 +236,32 @@ const OverlayManagerInternal = {
     }
   },
 
+  // nsIEventListener implementation
+  handleEvent: function(aEvent) {
+    try {
+      let domWindow = aEvent.currentTarget;
+
+      switch (aEvent.type) {
+      case "load":
+        domWindow.removeEventListener("load", this, false);
+        OverlayManagerInternal.createWindowEntry(domWindow);
+        break;
+      case "unload":
+        OverlayManagerInternal.destroyWindowEntry(domWindow);
+        break;
+      }
+    }
+    catch (e) {
+      ERROR("Error during window " + aEvent.type, e);
+    }
+  },
+
   // nsIWindowMediatorListener implementation
   onOpenWindow: function(aXULWindow) {
     let domWindow = aXULWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIDOMWindowInternal);
 
-    domWindow.addEventListener("load", function() {
-      domWindow.removeEventListener("load", arguments.callee, false);
-
-      try {
-        OverlayManagerInternal.createWindowEntry(domWindow);
-      }
-      catch (e) {
-        ERROR("Error during window load", e);
-      }
-    }, false);
-
-    domWindow.addEventListener("unload", function() {
-      domWindow.removeEventListener("unload", arguments.callee, false);
-
-      try {
-        OverlayManagerInternal.destroyWindowEntry(domWindow);
-      }
-      catch (e) {
-        ERROR("Error during window unload", e);
-      }
-    }, false);
+    domWindow.addEventListener("load", this, false);
   },
 
   onWindowTitleChange: function() { },
