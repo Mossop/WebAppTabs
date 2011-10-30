@@ -65,18 +65,18 @@ const DEFAULT_WEBAPPS = [{
 }];
 
 var webtabs = {
-  // A map from webapp ID to webapp descriptor
-  tabDescsMap: null,
   // A list of webapp descriptors
-  tabDescsList: null,
+  webappList: null,
+  // A WeakMap from webapp to tab
+  webappTabMap: null,
 
   // A reference to the default window content area click handler
   _origContentAreaClick: null,
 
   onLoad: function() {
-    this.tabDescsMap = {};
+    this.webappTabMap = new WeakMap();
     this.loadPrefs();
-    this.tabDescsList.forEach(function(aDesc) {
+    this.webappList.forEach(function(aDesc) {
       this.createWebAppButton(aDesc);
     }, this);
 
@@ -87,7 +87,7 @@ var webtabs = {
   onUnload: function() {
     window.contentAreaClick = this._origContentAreaClick;
 
-    this.tabDescsList.forEach(function(aDesc) {
+    this.webappList.forEach(function(aDesc) {
       this.removeWebAppButton(aDesc);
     }, this);
   },
@@ -95,7 +95,7 @@ var webtabs = {
   newContentAreaClick: function(aEvent) {
     // If you click in a link to a website we have a shortcut for, we load it in a tab
     let href = hRefForClickEvent(aEvent);
-    for (let [, tabDesc] in Iterator(webtabs.tabDescsList)) {
+    for (let [, tabDesc] in Iterator(webtabs.webappList)) {
       if (href.indexOf(tabDesc['options']['contentPage']) == 0) {
         tabDesc.options.contentPage = href;
         let tabmail = document.getElementById('tabmail');
@@ -113,10 +113,6 @@ var webtabs = {
       aDesc.id = aDesc.name.replace(' ', '_', 'g');
     }
 
-    if (!webtabs.tabDescsMap[aDesc.id]) {
-      this.tabDescsMap[aDesc.id] = aDesc;
-    }
-
     let tabmailButtons = document.getElementById("tabmail-buttons");
     let button = document.createElement("toolbarbutton");
     button.setAttribute("id", aDesc.id);
@@ -126,7 +122,12 @@ var webtabs = {
     tabmailButtons.appendChild(button);
 
     button.addEventListener("command", function() {
-      webtabs.openTab(aDesc);
+      try {
+        webtabs.openTab(aDesc);
+      }
+      catch (e) {
+        ERROR("Failed to open webapp", e);
+      }
     }, false);
   },
 
@@ -138,17 +139,43 @@ var webtabs = {
       ERROR("Missing webapp button for " + aDesc.name);
   },
 
+  getTabInfoForWebApp: function(aDesc) {
+    if (!this.webappTabMap.has(aDesc))
+      return null;
+
+    let info = this.webappTabMap.get(aDesc);
+    if (!info)
+      return null;
+
+    // Check that this tabinfo is still in the UI
+    let node = info.browser;
+    while (node && node != node.ownerDocument.documentElement)
+      node = node.parentNode;
+
+    if (node)
+      return info;
+    return null;
+  },
+
   openTab: function(aDesc) {
+    let tabmail = document.getElementById('tabmail');
+
+    let info = this.getTabInfoForWebApp(aDesc);
+    if (info) {
+      tabmail.switchToTab(info);
+      return;
+    }
+
     let url = NetUtil.newURI(aDesc.href);
     let regex = new RegExp("^http[s]?://" + url.hostname + "/");
 
-    let tabmail = document.getElementById('tabmail');
-    let info = tabmail.openTab("contentTab", {
+    info = tabmail.openTab("contentTab", {
       contentPage: aDesc.href,
       clickHandler: "return true;"
     });
+    LOG(info);
 
-    info.tabNode.image = aDesc.icon;
+    this.webappTabMap.set(aDesc, info);
 
     info.browser.addEventListener("click", function(aEvent) {
       specialTabs.siteClickHandler(aEvent, regex);
@@ -161,7 +188,7 @@ var webtabs = {
   persistPrefs: function() {
     let jsondata = JSON.stringify({
       schema: WEBAPP_SCHEMA,
-      webapps: this.tabDescsList,
+      webapps: this.webappList,
     })
     Application.prefs.setValue(EXTPREFNAME, jsondata);
   },
@@ -176,7 +203,7 @@ var webtabs = {
 
         switch (schema) {
         case WEBAPP_SCHEMA:
-          this.tabDescsList = data.webapps;
+          this.webappList = data.webapps;
           break;
         default:
           throw new Ce("Unknown webapps data schema " + schema);
@@ -189,7 +216,7 @@ var webtabs = {
       ERROR("Failed to read webapps from config", e);
     }
 
-    this.tabDescsList = DEFAULT_WEBAPPS;
+    this.webappList = DEFAULT_WEBAPPS;
     this.persistPrefs();
   }
 };
