@@ -88,6 +88,10 @@ var webtabs = {
     window.contentAreaClick = this._origContentAreaClick;
 
     this.webappList.forEach(function(aDesc) {
+      let info = this.getTabInfoForWebApp(aDesc);
+      if (info)
+        document.getElementById('tabmail').closeTab(info, true);
+
       this.removeWebAppButton(aDesc);
     }, this);
   },
