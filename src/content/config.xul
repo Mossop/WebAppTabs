@@ -48,10 +48,10 @@
 
   <hbox>
     <grid flex="1">
-      <cols>
-        <col/>
-        <col flex="1" align="stretch"/>
-      </cols>
+      <columns>
+        <column/>
+        <column flex="1" align="stretch"/>
+      </columns>
       <rows>
         <row>
           <label value="Name:"/>
