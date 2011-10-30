@@ -7,7 +7,7 @@
     <em:optionsURL>chrome://webapptabs/content/config.xul</em:optionsURL>
 
     <em:name>WebApp Tabs</em:name>
-    <em:version>0.1</em:version>
+    <em:version>0.5</em:version>
     <em:creator>Dave Townsend</em:creator>
     <em:contributor>David Ascher</em:contributor>
 

@@ -43,8 +43,6 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Ce = Components.Exception;
 
-const EXTPREFNAME = "extension.webapptabs.webapps";
-
 const config = {
   list: null,
 

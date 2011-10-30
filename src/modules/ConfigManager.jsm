@@ -45,9 +45,9 @@ const Ci = Components.interfaces;
 const Ce = Components.Exception;
 const Cr = Components.results;
 
-const EXTPREFNAME = "extension.webapptabs.webapps";
+const EXTPREFNAME = "extensions.webapptabs.webapps";
 
-const WEBAPP_SCHEMA = 2;
+const WEBAPP_SCHEMA = 1;
 const DEFAULT_WEBAPPS = [{
   'name': 'Google Calendar',
   'href': 'https://calendar.google.com/',
