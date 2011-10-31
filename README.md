@@ -29,7 +29,7 @@ The main goals are:
 Building
 --------
 
-To build an XPI that can be installing into Thunderbird change to the src
+To build an XPI that can be installing into Thunderbird change to the `src`
 directory and run the following command:
 
     zip -r0 webapptabs.xpi *
