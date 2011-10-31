@@ -26,6 +26,14 @@ The main goals are:
 * The webapp should behave as well in Thunderbird as it would if opened in
   Firefox
 
+Building
+--------
+
+To build an XPI that can be installing into Thunderbird change to the src
+directory and run the following command:
+
+    zip -r0 webapptabs.xpi *
+
 Contributing
 ------------
 
