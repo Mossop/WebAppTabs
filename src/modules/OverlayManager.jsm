@@ -58,34 +58,22 @@ const OverlayManager = {
 const OverlayManagerInternal = {
   windowEntryMap: new WeakMap(),
   windowEntries: {},
-  styles: {},
-  scripts: {},
+  overlays: {},
 
   init: function() {
     LOG("init");
-    try {
-      let windows = Services.wm.getEnumerator(null);
-      while (windows.hasMoreElements()) {
-        let domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
-        this.createWindowEntry(domWindow);
-      }
-
-      Services.wm.addListener(this);
-    }
-    catch (e) {
-      ERROR("Exception during init", e);
-    }
+    Services.wm.addListener(this);
   },
 
   unload: function() {
     LOG("unload");
     try {
       Services.wm.removeListener(this);
-  
-      let windows = Services.wm.getEnumerator(null);
-      while (windows.hasMoreElements()) {
-        let domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
-        this.destroyWindowEntry(domWindow);
+
+      for (let windowURL in this.windowEntries) {
+        this.windowEntries[windowURL].forEach(function(aWindowEntry) {
+          this.destroyWindowEntry(aWindowEntry);
+        }, this);
       }
     }
     catch (e) {
@@ -93,58 +81,77 @@ const OverlayManagerInternal = {
     }
   },
 
-  createWindowEntry: function(aDOMWindow) {
+  createWindowEntry: function(aDOMWindow, aOverlays) {
     aDOMWindow.addEventListener("unload", this, false);
 
-    let spec = aDOMWindow.location.toString();
-    LOG("Creating window entry for " + spec);
+    let windowURL = aDOMWindow.location.toString();
+    LOG("Creating window entry for " + windowURL);
     if (this.windowEntryMap.has(aDOMWindow))
-      throw new Ce("Already registered window entry for " + spec);
+      throw new Ce("Already registered window entry for " + windowURL);
 
-    if (!(spec in this.windowEntries))
-      this.windowEntries[spec] = [];
+    if (!(windowURL in this.windowEntries))
+      this.windowEntries[windowURL] = [];
 
     let newEntry = {
       window: aDOMWindow,
       scripts: [],
-      styles: [],
+      nodes: [],
     };
 
-    this.windowEntries[spec].push(newEntry);
+    this.windowEntries[windowURL].push(newEntry);
     this.windowEntryMap.set(aDOMWindow, newEntry);
 
-    if (spec in this.styles) {
-      this.styles[spec].forEach(function(aStyleURL) {
-        this.loadStyleOverlay(newEntry, aStyleURL);
-      }, this);
-    }
-
-    if (spec in this.scripts) {
-      this.scripts[spec].forEach(function(aScriptURL) {
-        this.loadScriptOverlay(newEntry, aScriptURL);
-      }, this);
-    }
+    this.applyWindowEntryOverlays(newEntry, aOverlays);
+    return newEntry
   },
 
-  destroyWindowEntry: function(aDOMWindow) {
-    aDOMWindow.removeEventListener("unload", this, false);
+  destroyWindowEntry: function(aWindowEntry) {
+    aWindowEntry.window.removeEventListener("unload", this, false);
 
-    let spec = aDOMWindow.location.toString();
-    LOG("Destroying window entry for " + spec);
-    if (!(spec in this.windowEntries) || !this.windowEntryMap.has(aDOMWindow))
-      throw new Ce("Missing window entry for " + spec);
+    let windowURL = aWindowEntry.window.location.toString();
+    LOG("Destroying window entry for " + windowURL);
 
-    let windowEntry = this.windowEntryMap.get(aDOMWindow);
-    this.windowEntryMap.delete(aDOMWindow);
+    this.windowEntryMap.delete(aWindowEntry.window);
 
-    this.unloadStyleOverlays(windowEntry);
-    this.unloadScriptOverlays(windowEntry);
+    aWindowEntry.scripts.forEach(function(aSandbox) {
+      try {
+        if ("OverlayListener" in aSandbox && "unload" in aSandbox.OverlayListener)
+          aSandbox.OverlayListener.unload();
+      }
+      catch (e) {
+        ERROR("Exception calling script unload listener", e);
+      }
+    }, this);
+    aWindowEntry.scripts = [];
 
-    let pos = this.windowEntries[spec].indexOf(windowEntry);
+    aWindowEntry.nodes.forEach(function(aNode) {
+      aNode.parentNode.removeChild(aNode);
+    }, this);
+    aWindowEntry.nodes = [];
+
+    if (!(windowURL in this.windowEntries))
+      throw new Ce("Missing window entry for " + windowURL);
+    let pos = this.windowEntries[windowURL].indexOf(aWindowEntry);
     if (pos == -1)
-      throw new Ce("Missing window entry for " + spec);
+      throw new Ce("Missing window entry for " + windowURL);
 
-    this.windowEntries[spec].splice(pos, 1);
+    this.windowEntries[windowURL].splice(pos, 1);
+    if (this.windowEntries[windowURL].length == 0)
+      delete this.windowEntries[windowURL];
+  },
+
+  applyWindowEntryOverlays: function(aWindowEntry, aOverlays) {
+    if ("styles" in aOverlays) {
+      aOverlays.styles.forEach(function(aStyleURL) {
+        this.loadStyleOverlay(aWindowEntry, aStyleURL);
+      }, this);
+    }
+
+    if ("scripts" in aOverlays) {
+      aOverlays.scripts.forEach(function(aScriptURL) {
+        this.loadScriptOverlay(aWindowEntry, aScriptURL);
+      }, this);
+    }
   },
 
   loadStyleOverlay: function(aWindowEntry, aStyleURL) {
@@ -157,15 +164,7 @@ const OverlayManagerInternal = {
     styleNode.setAttribute("style", "display: none");
     aWindowEntry.window.document.documentElement.appendChild(styleNode);
 
-    aWindowEntry.styles.push(styleNode);
-  },
-
-  unloadStyleOverlays: function(aWindowEntry) {
-    aWindowEntry.styles.forEach(function(aStyleNode) {
-      aStyleNode.parentNode.removeChild(aStyleNode);
-    }, this);
-
-    aWindowEntry.styles = [];
+    aWindowEntry.nodes.push(styleNode);
   },
 
   loadScriptOverlay: function(aWindowEntry, aScriptURL) {
@@ -192,43 +191,46 @@ const OverlayManagerInternal = {
     aWindowEntry.scripts.push(sandbox);
   },
 
-  unloadScriptOverlays: function(aWindowEntry) {
-    aWindowEntry.scripts.forEach(function(aSandbox) {
-      if ("OverlayListener" in aSandbox && "unload" in aSandbox.OverlayListener)
-        aSandbox.OverlayListener.unload();
-    }, this);
-
-    aWindowEntry.scripts = [];
-  },
-
   addOverlays: function(aOverlayList) {
     try {
+      // First check over the new overlays, merge them into the master list
+      // and if any are for already tracked windows apply them
       for (windowURL in aOverlayList) {
-        let windows = [];
-        if (windowURL in this.windowEntries)
-          windows = this.windowEntries[windowURL];
+        let newOverlays = aOverlayList[windowURL];
 
-        aOverlayList[windowURL].styles.forEach(function(aStyleURL) {
-          if (!(windowURL in this.styles))
-            this.styles[windowURL] = [];
+        if (!(windowURL in this.overlays))
+          this.overlays[windowURL] = {};
+        let existingOverlays = this.overlays[windowURL];
 
-          this.styles[windowURL].push(aStyleURL);
+        ["styles", "scripts"].forEach(function(aType) {
+          if (!(aType in newOverlays))
+            return;
 
-          windows.forEach(function(aWindowEntry) {
-            this.loadStyleOverlay(aWindowEntry, aStyleURL);
-          }, this);
+          if (!(aType in existingOverlays))
+            existingOverlays[aType] = newOverlays[aType].slice(0);
+          else
+            existingOverlays[aType].push(newOverlays[aType]);
         }, this);
 
-        aOverlayList[windowURL].scripts.forEach(function(aScriptURL) {
-          if (!(windowURL in this.scripts))
-            this.scripts[windowURL] = [];
-
-          this.scripts[windowURL].push(aScriptURL);
-
-          windows.forEach(function(aWindowEntry) {
-            this.loadScriptOverlay(aWindowEntry, aScriptURL);
+        // Apply the new overlays to any already tracked windows
+        if (windowURL in this.windowEntries) {
+          this.windowEntries[windowURL].forEach(function(aWindowEntry) {
+            this.applyWindowEntryOverlays(aWindowEntry, newOverlays);
           }, this);
-        }, this);
+        }
+      }
+
+      // Search over existing windows to see if any need to be tracked now
+      let windows = Services.wm.getEnumerator(null);
+      while (windows.hasMoreElements()) {
+        let domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
+        let windowURL = domWindow.location.toString();
+
+        // If we are adding overlays for this window and not already tracking
+        // this window then start to track it and add the new overlays
+        if ((windowURL in aOverlayList) && !(windowURL in this.windowEntries)) {
+          let windowEntry = this.createWindowEntry(domWindow, aOverlayList[windowURL]);
+        }
       }
     }
     catch (e) {
@@ -247,7 +249,12 @@ const OverlayManagerInternal = {
         OverlayManagerInternal.createWindowEntry(domWindow);
         break;
       case "unload":
-        OverlayManagerInternal.destroyWindowEntry(domWindow);
+        if (!this.windowEntryMap.has(domWindow)) {
+          ERROR("Saw unload event for unknown window " + domWindow.location);
+          return;
+        }
+        let windowEntry = this.windowEntryMap.get(aDOMWindow);
+        OverlayManagerInternal.destroyWindowEntry(windowEntry);
         break;
       }
     }
@@ -261,7 +268,10 @@ const OverlayManagerInternal = {
     let domWindow = aXULWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIDOMWindowInternal);
 
-    domWindow.addEventListener("load", this, false);
+    let windowURL = domWindow.location.toString();
+    // If this is a window we have overlays for then wait for it to load
+    if (windowURL in this.overlays)
+      domWindow.addEventListener("load", this, false);
   },
 
   onWindowTitleChange: function() { },
