@@ -57,9 +57,7 @@ const webtabs = {
 
   onLoad: function() {
     this.webappTabMap = new WeakMap();
-    this.buttonContainer = document.createElement("hbox");
-    this.buttonContainer.setAttribute("id", "webapptabs-buttons");
-    document.getElementById("tabmail-buttons").appendChild(this.buttonContainer);
+    this.buttonContainer = document.getElementById("webapptabs-buttons");
 
     ConfigManager.webappList.forEach(function(aDesc) {
       this.createWebAppButton(aDesc);
@@ -79,8 +77,6 @@ const webtabs = {
     ConfigManager.webappList.forEach(function(aDesc) {
       this.removeWebAppButton(aDesc);
     }, this);
-
-    this.buttonContainer.parentNode.removeChild(this.buttonContainer);
   },
 
   // Called without a proper this

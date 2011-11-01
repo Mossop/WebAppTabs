@@ -41,6 +41,9 @@ const Cr = Components.results;
 
 const OVERLAYS = {
   "chrome://messenger/content/messenger.xul": {
+    documents: [
+      "chrome://webapptabs/content/overlay.xul"
+    ],
     scripts: [
       "chrome://webapptabs/content/webtab.js"
     ],

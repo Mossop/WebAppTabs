@@ -45,6 +45,8 @@ const Ci = Components.interfaces;
 const Ce = Components.Exception;
 const Cr = Components.results;
 
+const XMLURI_PARSE_ERROR = "http://www.mozilla.org/newlayout/xml/parsererror.xml"
+
 const OverlayManager = {
   addOverlays: function(aOverlayList) {
     OverlayManagerInternal.addOverlays(aOverlayList);
@@ -141,6 +143,12 @@ const OverlayManagerInternal = {
   },
 
   applyWindowEntryOverlays: function(aWindowEntry, aOverlays) {
+    if ("documents" in aOverlays) {
+      aOverlays.documents.forEach(function(aDocumentURL) {
+        this.loadDocumentOverlay(aWindowEntry, aDocumentURL);
+      }, this);
+    }
+
     if ("styles" in aOverlays) {
       aOverlays.styles.forEach(function(aStyleURL) {
         this.loadStyleOverlay(aWindowEntry, aStyleURL);
@@ -151,6 +159,81 @@ const OverlayManagerInternal = {
       aOverlays.scripts.forEach(function(aScriptURL) {
         this.loadScriptOverlay(aWindowEntry, aScriptURL);
       }, this);
+    }
+  },
+
+  loadDocumentOverlay: function(aWindowEntry, aDocumentURL) {
+    LOG("Loading document overlay " + aDocumentURL);
+
+    // TODO make this async
+    let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
+              createInstance(Ci.nsIXMLHttpRequest);
+    xhr.open("GET", aDocumentURL, false);
+    xhr.send();
+
+    let overlayDoc = xhr.responseXML;
+    if (overlayDoc.documentElement.namespaceURI == XMLURI_PARSE_ERROR)
+      return;
+
+    let targetDoc = aWindowEntry.window.document;
+
+    function walkDocumentNodes(aDocument) {
+      let node = aDocument.documentElement;
+
+      while (node) {
+        let currentNode = node;
+
+        // If possible to descend then do so
+        if (node.firstChild) {
+          node = node.firstChild;
+        }
+        else {
+          // Otherwise find the next node in the document by walking up the tree
+          // until there is a nextSibling (or we hit the documentElement)
+          while (!node.nextSibling && node.parentNode != overlayDoc.documentElement)
+            node = node.parentNode;
+
+          // Select the nextSibling (or null if we hit the top)
+          node = node.nextSibling;
+        }
+
+        yield currentNode;
+      }
+    }
+
+    function elementChildren(aElement) {
+      let node = aElement.firstChild;
+      while (node) {
+        let currentNode = node;
+
+        node = node.nextSibling;
+
+        if (currentNode instanceof Ci.nsIDOMElement)
+          yield currentNode;
+      }
+    }
+
+    for (let node in walkDocumentNodes(overlayDoc)) {
+      // Remove the node if it is an empty text node
+      if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE && node.nodeValue.trim() == "")
+        node.parentNode.removeChild(node);
+    }
+
+    for (let containerElement in elementChildren(overlayDoc.documentElement)) {
+      if (!containerElement.id)
+        continue;
+
+      let targetElement = targetDoc.getElementById(containerElement.id);
+      if (!targetElement || targetElement.localName != containerElement.localName)
+        continue;
+
+      // TODO apply attributes to the target element
+
+      for (let newElement in elementChildren(containerElement)) {
+        // TODO respect insertbefore and insertafter
+        targetElement.appendChild(newElement);
+        aWindowEntry.nodes.push(newElement);
+      }
     }
   },
 
@@ -201,7 +284,7 @@ const OverlayManagerInternal = {
           this.overlays[windowURL] = {};
         let existingOverlays = this.overlays[windowURL];
 
-        ["styles", "scripts"].forEach(function(aType) {
+        ["documents", "styles", "scripts"].forEach(function(aType) {
           if (!(aType in newOverlays))
             return;
 
