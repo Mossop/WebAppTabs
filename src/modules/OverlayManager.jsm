@@ -157,12 +157,11 @@ const OverlayManagerInternal = {
   loadStyleOverlay: function(aWindowEntry, aStyleURL) {
     LOG("Loading style overlay " + aStyleURL);
 
-    let styleNode = aWindowEntry.window.document.createElementNS("http://www.w3.org/1999/xhtml", "link");
-    styleNode.setAttribute("rel", "stylesheet");
-    styleNode.setAttribute("type", "text/css");
-    styleNode.setAttribute("href", aStyleURL);
-    styleNode.setAttribute("style", "display: none");
-    aWindowEntry.window.document.documentElement.appendChild(styleNode);
+    let doc = aWindowEntry.window.document;
+    let styleNode = doc.createProcessingInstruction("xml-stylesheet",
+                                                    "href=\"" + aStyleURL + "\" " +
+                                                    "type=\"text/css\"");
+    doc.insertBefore(styleNode, doc.documentElement);
 
     aWindowEntry.nodes.push(styleNode);
   },
