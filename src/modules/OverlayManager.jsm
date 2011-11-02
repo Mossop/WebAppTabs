@@ -328,7 +328,10 @@ const OverlayManagerInternal = {
       switch (aEvent.type) {
       case "load":
         domWindow.removeEventListener("load", this, false);
-        OverlayManagerInternal.createWindowEntry(domWindow);
+        let windowURL = domWindow.location.toString();
+        // Track this window if there are overlays for it
+        if (windowURL in this.overlays)
+          OverlayManagerInternal.createWindowEntry(domWindow, this.overlays[windowURL]);
         break;
       case "unload":
         if (!this.windowEntryMap.has(domWindow)) {
@@ -350,10 +353,8 @@ const OverlayManagerInternal = {
     let domWindow = aXULWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIDOMWindowInternal);
 
-    let windowURL = domWindow.location.toString();
-    // If this is a window we have overlays for then wait for it to load
-    if (windowURL in this.overlays)
-      domWindow.addEventListener("load", this, false);
+    // We can't get the window's URL until it is loaded
+    domWindow.addEventListener("load", this, false);
   },
 
   onWindowTitleChange: function() { },
