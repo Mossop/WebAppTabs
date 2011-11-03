@@ -50,9 +50,6 @@ const webtabs = {
   // The UI element that contains the webapp buttons
   buttonContainer: null,
 
-  // A reference to the default window content area click handler
-  _origContentAreaClick: null,
-
   onLoad: function() {
     this.buttonContainer = document.getElementById("webapptabs-buttons");
 
@@ -62,12 +59,13 @@ const webtabs = {
 
     ConfigManager.addChangeListener(this.configChanged);
 
-    this._origContentAreaClick = contentAreaClick;
-    window.contentAreaClick = this.newContentAreaClick;
+    let container = document.getElementById("tabpanelcontainer");
+    container.addEventListener("click", this, true);
   },
 
   onUnload: function() {
-    window.contentAreaClick = this._origContentAreaClick;
+    let container = document.getElementById("tabpanelcontainer");
+    container.removeEventListener("click", this, true);
 
     ConfigManager.removeChangeListener(this.configChanged);
 
@@ -113,22 +111,6 @@ const webtabs = {
       this.removeWebAppButton(before.desc);
       before = next;
     }
-  },
-
-  newContentAreaClick: function(aEvent) {
-    // If you click in a link to a website we have a shortcut for, we load it in a tab
-    let href = hRefForClickEvent(aEvent);
-    for (let [, tabDesc] in Iterator(ConfigManager.webappList)) {
-      if (href.indexOf(tabDesc['options']['contentPage']) == 0) {
-        tabDesc.options.contentPage = href;
-        let tabmail = document.getElementById('tabmail');
-        let info = tabmail.openTab("contentTab", tabDesc.options);
-        info.tabNode.image=tabDesc.icon;
-        aEvent.preventDefault()
-        return;
-      }
-    }
-    this._origContentAreaClick(aEvent);
   },
 
   createWebAppButton: function(aDesc, aBefore) {
@@ -195,13 +177,8 @@ const webtabs = {
     }
 
     info = tabmail.openTab("contentTab", {
-      contentPage: aURL ? aURL : aDesc.href,
-      clickHandler: "return true;"
+      contentPage: aURL ? aURL : aDesc.href
     });
-
-    info.browser.addEventListener("click", function(aEvent) {
-      webtabs.handleWebAppContentClick(aDesc, info, aEvent);
-    }, false);
 
     // Only get new favicons when loading the normal webapp url
     if (aURL)
@@ -236,7 +213,11 @@ const webtabs = {
     info.browser.addProgressListener(listener);
   },
 
-  handleWebAppContentClick: function(aDesc, aTabInfo, aEvent) {
+  handleEvent: function(aEvent) {
+    let info = document.getElementById('tabmail').currentTabInfo;
+    if (!info)
+      return;
+
     // Don't handle events that: a) aren't trusted, b) have already been
     // handled or c) aren't left-click.
     if (!aEvent.isTrusted || aEvent.getPreventDefault() || aEvent.button)
@@ -248,29 +229,23 @@ const webtabs = {
 
     LOG("Saw url " + href);
 
-    // If this is a URL for the current webapp then allow it to load
-    if (this.isURLForWebApp(href, aDesc))
-      return;
-
-    // If this URL matches another webapp then open that
+    // If this URL matches a webapp then switch to or open that
     let newDesc = this.getWebAppForURL(href);
     if (newDesc) {
       aEvent.preventDefault();
+      aEvent.stopPropagation();
 
-      let info = this.getTabInfoForWebApp(newDesc);
-      if (info) {
+      let newInfo = this.getTabInfoForWebApp(newDesc);
+      if (newInfo) {
         let tabmail = document.getElementById('tabmail');
-        tabmail.switchToTab(info);
-        info.browser.loadURI(href, null, null);
+        tabmail.switchToTab(newInfo);
+        newInfo.browser.loadURI(href, null, null);
       }
       else {
         this.openTab(newDesc, href);
       }
       return;
     }
-
-    // Perform the default action
-    specialTabs.defaultClickHandler(aEvent);
   }
 };
 
