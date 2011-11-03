@@ -47,8 +47,6 @@ const Ce = Components.Exception;
 const Cr = Components.results;
 
 const webtabs = {
-  // A WeakMap from webapp to tab
-  webappTabMap: null,
   // The UI element that contains the webapp buttons
   buttonContainer: null,
 
@@ -56,7 +54,6 @@ const webtabs = {
   _origContentAreaClick: null,
 
   onLoad: function() {
-    this.webappTabMap = new WeakMap();
     this.buttonContainer = document.getElementById("webapptabs-buttons");
 
     ConfigManager.webappList.forEach(function(aDesc) {
@@ -154,10 +151,6 @@ const webtabs = {
   },
 
   removeWebAppButton: function(aDesc) {
-    let info = this.getTabInfoForWebApp(aDesc);
-    if (info)
-      document.getElementById('tabmail').closeTab(info, true);
-
     let button = document.getElementById(aDesc.id);
     if (button)
       button.parentNode.removeChild(button);
@@ -165,21 +158,23 @@ const webtabs = {
       ERROR("Missing webapp button for " + aDesc.name);
   },
 
+  isURLForWebApp: function(aURL, aDesc) {
+    return aURL.substring(0, aDesc.href.length) == aDesc.href;
+  },
+
   getTabInfoForWebApp: function(aDesc) {
-    if (!this.webappTabMap.has(aDesc))
-      return null;
+    let tabmail = document.getElementById('tabmail');
 
-    let info = this.webappTabMap.get(aDesc);
-    if (!info)
-      return null;
+    let tabs = tabmail.tabInfo.filter(function(aTabInfo) {
+      if (!("browser" in aTabInfo))
+        return false;
 
-    // Check that this tabinfo is still in the UI
-    let node = info.browser;
-    while (node && node != node.ownerDocument.documentElement)
-      node = node.parentNode;
+      return this.isURLForWebApp(aTabInfo.browser.currentURI.spec, aDesc);
+    }, this);
 
-    if (node)
-      return info;
+    if (tabs.length > 0)
+      return tabs[0];
+
     return null;
   },
 
@@ -199,8 +194,6 @@ const webtabs = {
       contentPage: aDesc.href,
       clickHandler: "return true;"
     });
-
-    this.webappTabMap.set(aDesc, info);
 
     info.browser.addEventListener("click", function(aEvent) {
       specialTabs.siteClickHandler(aEvent, regex);
