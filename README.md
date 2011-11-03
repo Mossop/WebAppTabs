@@ -29,10 +29,9 @@ The main goals are:
 Building
 --------
 
-To build an XPI that can be installing into Thunderbird change to the `src`
-directory and run the following command:
-
-    zip -r0 webapptabs.xpi *
+To build an XPI that can be installed into Thunderbird just run the `build.sh`
+command and it will output `webapptabs.xpi` into the current directory. **This
+will update any existing file without warning.**
 
 Contributing
 ------------
