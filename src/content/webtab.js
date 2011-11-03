@@ -246,6 +246,18 @@ const webtabs = {
       }
       return;
     }
+
+    let protocolSvc = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
+                      getService(Ci.nsIExternalProtocolService);
+
+    let uri = makeURI(href);
+    if (!protocolSvc.isExposedProtocol(uri.scheme) ||
+        uri.schemeIs("http") || uri.schemeIs("https") ||
+        uri.schemeIs("about")) {
+      aEvent.preventDefault();
+      aEvent.stopPropagation();
+      openLinkExternally(href);
+    }
   }
 };
 
