@@ -57,6 +57,10 @@ const config = {
     this.select();
   },
 
+  unload: function() {
+    ConfigManager.persistPrefs();
+  },
+
   add: function() {
     let href = document.getElementById("txt_href").value;
     let URIFixup = Cc["@mozilla.org/docshell/urifixup;1"].
@@ -73,7 +77,7 @@ const config = {
     document.getElementById("txt_href").value = "";
 
     ConfigManager.webappList.push(desc);
-    ConfigManager.persistPrefs();
+    ConfigManager.updatePrefs();
     this.addWebAppItem(desc);
   },
 
@@ -82,7 +86,7 @@ const config = {
     let pos = ConfigManager.webappList.indexOf(item.desc);
     ConfigManager.webappList.splice(pos, 1);
     this.list.removeChild(item);
-    ConfigManager.persistPrefs();
+    ConfigManager.updatePrefs();
   },
 
   input: function() {
@@ -195,7 +199,7 @@ const config = {
     else {
       ConfigManager.webappList.push(sourceItem.desc);
     }
-    ConfigManager.persistPrefs();
+    ConfigManager.updatePrefs();
 
     aEvent.preventDefault();
   },

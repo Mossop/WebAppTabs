@@ -46,7 +46,7 @@
 
 <window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
         title="&title;" style="width: 400px; height: 300px;"
-        onload="config.load()">
+        onload="config.load()" onunload="config.unload()">
   <script type="text/javascript" src="config.js"/>
 
   <richlistbox id="list_webapps" seltype="single" flex="1"

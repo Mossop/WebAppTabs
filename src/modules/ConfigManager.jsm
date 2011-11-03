@@ -79,17 +79,11 @@ const ConfigManager = {
     this.changeListeners.splice(pos, 1);
   },
 
-  persistPrefs: function() {
+  updatePrefs: function() {
     this.webappList.forEach(function(aDesc) {
       if (!aDesc.id)
         aDesc.id = aDesc.name.replace(' ', '_', 'g');
     });
-
-    let jsondata = JSON.stringify({
-      schema: WEBAPP_SCHEMA,
-      webapps: this.webappList,
-    })
-    Services.prefs.setCharPref(EXTPREFNAME, jsondata);
 
     this.changeListeners.forEach(function(aListener) {
       try {
@@ -99,6 +93,15 @@ const ConfigManager = {
         ERROR("Exception calling config change listener", e);
       }
     }, this);
+  },
+
+  persistPrefs: function() {
+    let jsondata = JSON.stringify({
+      schema: WEBAPP_SCHEMA,
+      webapps: this.webappList,
+    })
+    Services.prefs.setCharPref(EXTPREFNAME, jsondata);
+    Services.prefs.savePrefFile(null);
   },
 
   loadPrefs: function() {
