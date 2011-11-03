@@ -41,6 +41,8 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
+const LOGLEVEL = "extensions.webapptabs.loglevel";
+
 function Logger(aScope, aName) {
   this.name = aName;
 
@@ -53,6 +55,9 @@ Logger.prototype = {
   name: null,
 
   log: function(aStr, aException) {
+    if (LogManager.logLevel > LogManager.LEVEL_LOG)
+      return;
+
     let message = this.formatLogMessage("error", this.name, aStr, aException);
 
     Services.console.logStringMessage(message)
@@ -61,6 +66,9 @@ Logger.prototype = {
   },
 
   warn: function(aStr, aException) {
+    if (LogManager.logLevel > LogManager.LEVEL_WARN)
+      return;
+
     let message = this.formatLogMessage("error", this.name, aStr, aException);
 
     let stack = this.getStackDetails(aException);
@@ -75,6 +83,9 @@ Logger.prototype = {
   },
 
   error: function(aStr, aException) {
+    if (LogManager.logLevel > LogManager.LEVEL_ERROR)
+      return;
+
     let message = this.formatLogMessage("error", this.name, aStr, aException);
 
     let stack = this.getStackDetails(aException);
@@ -133,7 +144,26 @@ Logger.prototype = {
   },
 };
 
+var gLogLevel = null;
+
 const LogManager = {
+  LEVEL_DEBUG: 0,
+  LEVEL_LOG: 1,
+  LEVEL_WARN: 2,
+  LEVEL_ERROR: 3,
+
+  get logLevel() {
+    if (gLogLevel)
+      return gLogLevel;
+
+    if (Services.prefs.getPrefType(LOGLEVEL) != Services.prefs.PREF_INT)
+      gLogLevel = 2;
+    else
+      gLogLevel = Services.prefs.getIntPref(LOGLEVEL);
+
+    return gLogLevel;
+  },
+
   createLogger: function(aScope, aName) {
     new Logger(aScope, aName);
   }
