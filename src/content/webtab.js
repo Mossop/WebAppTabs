@@ -162,6 +162,13 @@ const webtabs = {
     return aURL.substring(0, aDesc.href.length) == aDesc.href;
   },
 
+  getWebAppForURL: function(aURL) {
+    let descs = ConfigManager.webappList.filter(this.isURLForWebApp.bind(this, aURL));
+    if (descs.length > 0)
+      return descs[0];
+    return null;
+  },
+
   getTabInfoForWebApp: function(aDesc) {
     let tabmail = document.getElementById('tabmail');
 
@@ -178,7 +185,7 @@ const webtabs = {
     return null;
   },
 
-  openTab: function(aDesc) {
+  openTab: function(aDesc, aURL) {
     let tabmail = document.getElementById('tabmail');
 
     let info = this.getTabInfoForWebApp(aDesc);
@@ -187,17 +194,18 @@ const webtabs = {
       return;
     }
 
-    let url = NetUtil.newURI(aDesc.href);
-    let regex = new RegExp("^http[s]?://" + url.hostname + "/");
-
     info = tabmail.openTab("contentTab", {
-      contentPage: aDesc.href,
+      contentPage: aURL ? aURL : aDesc.href,
       clickHandler: "return true;"
     });
 
     info.browser.addEventListener("click", function(aEvent) {
-      specialTabs.siteClickHandler(aEvent, regex);
+      webtabs.handleWebAppContentClick(aDesc, info, aEvent);
     }, false);
+
+    // Only get new favicons when loading the normal webapp url
+    if (aURL)
+      return;
 
     let listener = {
       onStateChange: function(aWebProgress, aRequest, aState, aStatus) {
@@ -227,6 +235,43 @@ const webtabs = {
 
     info.browser.addProgressListener(listener);
   },
+
+  handleWebAppContentClick: function(aDesc, aTabInfo, aEvent) {
+    // Don't handle events that: a) aren't trusted, b) have already been
+    // handled or c) aren't left-click.
+    if (!aEvent.isTrusted || aEvent.getPreventDefault() || aEvent.button)
+      return;
+
+    let href = hRefForClickEvent(aEvent, true);
+    if (!href)
+      return;
+
+    LOG("Saw url " + href);
+
+    // If this is a URL for the current webapp then allow it to load
+    if (this.isURLForWebApp(href, aDesc))
+      return;
+
+    // If this URL matches another webapp then open that
+    let newDesc = this.getWebAppForURL(href);
+    if (newDesc) {
+      aEvent.preventDefault();
+
+      let info = this.getTabInfoForWebApp(newDesc);
+      if (info) {
+        let tabmail = document.getElementById('tabmail');
+        tabmail.switchToTab(info);
+        info.browser.loadURI(href, null, null);
+      }
+      else {
+        this.openTab(newDesc, href);
+      }
+      return;
+    }
+
+    // Perform the default action
+    specialTabs.defaultClickHandler(aEvent);
+  }
 };
 
 var OverlayListener = {
