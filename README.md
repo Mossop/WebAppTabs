@@ -18,7 +18,7 @@ The main goals are:
 
 * Allow the user to configure a set of available webapps
 * Provide a way for the user to open each webapp in a tab
-* Any attempt to open a comfigured webapp (e.g. from a link in an email or
+* Any attempt to open a configured webapp (e.g. from a link in an email or
   anywhere else) should open it in the existing tab for the webapp if one exists
   or a new tab for the webapp in Thunderbird
 * Any links clicked in the webapp that are to other sites should open in the
