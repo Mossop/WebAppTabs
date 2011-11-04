@@ -61,9 +61,13 @@ const webtabs = {
 
     let container = document.getElementById("tabpanelcontainer");
     container.addEventListener("click", this, true);
+
+    document.getElementById("mailContext").addEventListener("popupshowing", this, false);
   },
 
   onUnload: function() {
+    document.getElementById("mailContext").removeEventListener("popupshowing", this, false);
+
     let container = document.getElementById("tabpanelcontainer");
     container.removeEventListener("click", this, true);
 
@@ -213,7 +217,40 @@ const webtabs = {
     info.browser.addProgressListener(listener);
   },
 
-  handleEvent: function(aEvent) {
+  onPopupShowing: function(aEvent) {
+    let target = document.popupNode;
+
+    // If the context menu already detected the area as editable then bail out
+    if (gContextMenu.onEditableArea)
+      return;
+
+    let win = target.ownerDocument.defaultView;
+    if (!win)
+      return;
+
+    try {
+      var editingSession = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIWebNavigation)
+                              .QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIEditingSession);
+      if (!editingSession.windowIsEditable(win))
+        return;
+      if (win.getComputedStyle(target, "").getPropertyValue("-moz-user-modify") != "read-write")
+        return;
+    }
+    catch(ex) {
+      // If someone built with composer disabled, we can't get an editing session.
+      return;
+    }
+
+    gContextMenu.onTextInput = true;
+    gContextMenu.onEditableArea = true;
+    gSpellChecker.init(editingSession.getEditorForWindow(win));
+    gSpellChecker.initFromEvent(document.popupRangeParent, document.popupRangeOffset);
+    gContextMenu.initSpellingItems();
+  },
+
+  onContentClick: function(aEvent) {
     let info = document.getElementById('tabmail').currentTabInfo;
     if (!info)
       return;
@@ -258,7 +295,23 @@ const webtabs = {
       aEvent.stopPropagation();
       openLinkExternally(href);
     }
-  }
+  },
+
+  handleEvent: function(aEvent) {
+    try {
+      switch (aEvent.type) {
+      case "popupshowing":
+        this.onPopupShowing(aEvent);
+        break;
+      case "click":
+        this.onContentClick(aEvent);
+        break;
+      }
+    }
+    catch (e) {
+      ERROR("Exception during " + aEvent.type + " event", e);
+    }
+  },
 };
 
 var OverlayListener = {
