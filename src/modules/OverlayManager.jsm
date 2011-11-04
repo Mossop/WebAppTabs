@@ -230,8 +230,25 @@ const OverlayManagerInternal = {
       // TODO apply attributes to the target element
 
       for (let newElement in elementChildren(containerElement)) {
-        // TODO respect insertbefore and insertafter
-        targetElement.appendChild(newElement);
+        let insertBefore = null;
+
+        if (newElement.hasAttribute("insertbefore")) {
+          insertBefore = targetDoc.getElementById(newElement.getAttribute("insertbefore"));
+          if (insertBefore && insertBefore.parentNode != targetElement)
+            insertBefore = null;
+        }
+
+        if (!insertBefore && newElement.hasAttribute("insertafter")) {
+          insertBefore = targetDoc.getElementById(newElement.getAttribute("insertafter"));
+          if (insertBefore) {
+            if (insertBefore.parentNode != targetElement)
+              insertBefore = null
+            else
+              insertBefore = insertBefore.nextSibling;
+          }
+        }
+
+        targetElement.insertBefore(newElement, insertBefore);
         aWindowEntry.nodes.push(newElement);
       }
     }

@@ -35,7 +35,19 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
+<!DOCTYPE overlay [
+<!ENTITY % overlayDTD SYSTEM "chrome://webapptabs/locale/webtab.dtd">
+%overlayDTD;
+]>
+
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <menupopup id="mailContext">
+    <menuitem id="webapptabs-context-back" label="&back.label;"
+              insertbefore="mailContext-reload"/>
+    <menuitem id="webapptabs-context-forward" label="&forward.label;"
+              insertbefore="mailContext-reload"/>
+  </menupopup>
+
   <hbox id="tabmail-buttons">
     <hbox id="webapptabs-buttons"/>
   </hbox>

@@ -49,6 +49,10 @@ const Cr = Components.results;
 const webtabs = {
   // The UI element that contains the webapp buttons
   buttonContainer: null,
+  // The back context menu item
+  backButton: null,
+  // The forward context menu item
+  forwardButton: null,
 
   onLoad: function() {
     this.buttonContainer = document.getElementById("webapptabs-buttons");
@@ -63,9 +67,16 @@ const webtabs = {
     container.addEventListener("click", this, true);
 
     document.getElementById("mailContext").addEventListener("popupshowing", this, false);
+
+    this.backButton = document.getElementById("webapptabs-context-back")
+    this.backButton.addEventListener("command", this, false);
+    this.forwardButton = document.getElementById("webapptabs-context-forward")
+    this.forwardButton.addEventListener("command", this, false);
   },
 
   onUnload: function() {
+    this.backButton.removeEventListener("command", this, false);
+    this.forwardButton.removeEventListener("command", this, false);
     document.getElementById("mailContext").removeEventListener("popupshowing", this, false);
 
     let container = document.getElementById("tabpanelcontainer");
@@ -219,6 +230,18 @@ const webtabs = {
   },
 
   onPopupShowing: function(aEvent) {
+    let info = document.getElementById('tabmail').currentTabInfo;
+    if (!info || !("browser" in info)) {
+      this.backButton.hidden = true;
+      this.forwardButton.hidden = true;
+      return;
+    }
+
+    this.backButton.hidden = false;
+    this.forwardButton.hidden = false;
+    this.backButton.disabled = !info.browser.webNavigation.canGoBack;
+    this.forwardButton.disabled = !info.browser.webNavigation.canGoForward;
+
     let target = document.popupNode;
 
     // If the context menu already detected the area as editable then bail out
@@ -304,6 +327,22 @@ const webtabs = {
     }
   },
 
+  onBackClick: function(aEvent) {
+    let info = document.getElementById('tabmail').currentTabInfo;
+    if (!info || !("browser" in info))
+      return;
+
+    info.browser.goBack();
+  },
+
+  onForwardClick: function(aEvent) {
+    let info = document.getElementById('tabmail').currentTabInfo;
+    if (!info || !("browser" in info))
+      return;
+
+    info.browser.goForward();
+  },
+
   handleEvent: function(aEvent) {
     try {
       switch (aEvent.type) {
@@ -312,6 +351,12 @@ const webtabs = {
         break;
       case "click":
         this.onContentClick(aEvent);
+        break;
+      case "command":
+        if (aEvent.target == this.backButton)
+          this.onBackClick(aEvent);
+        else
+          this.onForwardClick(aEvent);
         break;
       }
     }
