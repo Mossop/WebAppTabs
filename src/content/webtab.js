@@ -181,7 +181,8 @@ const webtabs = {
     }
 
     info = tabmail.openTab("contentTab", {
-      contentPage: aURL ? aURL : aDesc.href
+      contentPage: aURL ? aURL : aDesc.href,
+      clickHandler: "return true;"
     });
 
     // Only get new favicons when loading the normal webapp url
@@ -269,6 +270,12 @@ const webtabs = {
     // If this URL matches a webapp then switch to or open that
     let newDesc = this.getWebAppForURL(href);
     if (newDesc) {
+      if (newDesc == this.getWebAppForURL(info.browser.currentURI.spec)) {
+        // If the load is for the same webapp that the tab is already displaying
+        // then just allow the event to proceed as normal.
+        return;
+      }
+
       aEvent.preventDefault();
       aEvent.stopPropagation();
 
