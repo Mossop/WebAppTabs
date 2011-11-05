@@ -84,6 +84,10 @@ const OverlayManager = {
     OverlayManagerInternal.addCategory(aCategory, aEntry, aValue);
   },
 
+  getScriptContext: function(aWindow, aScriptURL) {
+    return OverlayManagerInternal.getScriptContext(aWindow, aScriptURL);
+  },
+
   unload: function() {
     OverlayManagerInternal.unload();
   }
@@ -141,7 +145,7 @@ const OverlayManagerInternal = {
 
     let newEntry = {
       window: aDOMWindow,
-      scripts: [],
+      scripts: {},
       nodes: [],
     };
 
@@ -160,16 +164,16 @@ const OverlayManagerInternal = {
 
     this.windowEntryMap.delete(aWindowEntry.window);
 
-    aWindowEntry.scripts.forEach(function(aSandbox) {
+    for (let [,sandbox] in Iterator(aWindowEntry.scripts)) {
       try {
-        if ("OverlayListener" in aSandbox && "unload" in aSandbox.OverlayListener)
-          aSandbox.OverlayListener.unload();
+        if ("OverlayListener" in sandbox && "unload" in sandbox.OverlayListener)
+          sandbox.OverlayListener.unload();
       }
       catch (e) {
         ERROR("Exception calling script unload listener", e);
       }
-    }, this);
-    aWindowEntry.scripts = [];
+    }
+    aWindowEntry.scripts = {};
 
     aWindowEntry.nodes.forEach(function(aNode) {
       aNode.parentNode.removeChild(aNode);
@@ -315,11 +319,11 @@ const OverlayManagerInternal = {
     LOG("Loading script overlay " + aScriptURL);
 
     let sandbox = createSandbox(aWindowEntry.window, aScriptURL, aWindowEntry.window);
-    aWindowEntry.scripts.push(sandbox);
+    aWindowEntry.scripts[aScriptURL] = sandbox;
 
     if ("OverlayListener" in sandbox && "load" in sandbox.OverlayListener) {
       try {
-          sandbox.OverlayListener.load();
+        sandbox.OverlayListener.load();
       }
       catch (e) {
         WARN("Exception calling script load event " + aScriptURL, e);
@@ -331,7 +335,7 @@ const OverlayManagerInternal = {
     try {
       // First check over the new overlays, merge them into the master list
       // and if any are for already tracked windows apply them
-      for (windowURL in aOverlayList) {
+      for (let [windowURL, newOverlays] in Iterator(aOverlayList)) {
         let newOverlays = aOverlayList[windowURL];
 
         if (!(windowURL in this.overlays))
@@ -409,6 +413,15 @@ const OverlayManagerInternal = {
              getService(Ci.nsICategoryManager);
     cm.addCategoryEntry(aCategory, aEntry, aValue, false, true);
     this.categories.push([aCategory, aEntry]);
+  },
+
+  getScriptContext: function(aDOMWindow, aScriptURL) {
+    if (!this.windowEntryMap.has(aDOMWindow))
+      return null;
+    let windowEntry = this.windowEntryMap.get(aDOMWindow);
+    if (!(aScriptURL in windowEntry.scripts))
+      return null;
+    return windowEntry.scripts[aScriptURL];
   },
 
   // nsIEventListener implementation
