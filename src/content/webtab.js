@@ -53,7 +53,10 @@ const webtabs = {
   backButton: null,
   // The forward context menu item
   forwardButton: null,
+  // The Thunderbird onBeforeLinkTraversal function
   oldOnBeforeLinkTraversal: null,
+  // The Thunderbird browserDOMWindow
+  oldBrowserDOMWindow: null,
 
   onLoad: function() {
     this.buttonContainer = document.getElementById("webapptabs-buttons");
@@ -76,9 +79,21 @@ const webtabs = {
 
     this.oldOnBeforeLinkTraversal = MsgStatusFeedback.onBeforeLinkTraversal;
     MsgStatusFeedback.onBeforeLinkTraversal = this.onBeforeLinkTraversal.bind(this);
+
+    this.oldBrowserDOMWindow = window.browserDOMWindow;
+    window.browserDOMWindow = this;
   },
 
   onUnload: function() {
+    var browsers = document.querySelectorAll("browser.webapptab-browser");
+    if (browsers.length > 0)
+      WARN("Found unexpected browsers left in the document");
+
+    for (let i = 0; i < browsers.length; i++)
+    browsers[i].parentNode.removeChild(browsers[i]);
+
+    window.browserDOMWidnow = this.oldBrowserDOMWindow;
+
     MsgStatusFeedback.onBeforeLinkTraversal = this.oldOnBeforeLinkTraversal;
 
     this.backButton.removeEventListener("command", this, false);
@@ -145,7 +160,7 @@ const webtabs = {
 
     button.addEventListener("command", function() {
       try {
-        webtabs.openTab(aDesc);
+        webtabs.openWebApp(aDesc);
       }
       catch (e) {
         ERROR("Failed to open webapp", e);
@@ -177,12 +192,14 @@ const webtabs = {
     return null;
   },
 
-  openTab: function(aDesc, aURL) {
+  openWebApp: function(aDesc, aURL) {
     let tabmail = document.getElementById('tabmail');
 
     let info = this.getTabInfoForWebApp(aDesc);
     if (info) {
       tabmail.switchToTab(info);
+      if (aURL)
+        info.browser.loadURI(aURL, null, null);
       return;
     }
 
@@ -302,26 +319,17 @@ const webtabs = {
     if (!href)
       return;
 
-    LOG("Saw url " + href);
-
     // If this URL isn't for a webapp then continue as normal
     let newDesc = ConfigManager.getWebAppForURL(href);
     if (!newDesc)
       return;
 
+    LOG("Clicked on URL in content: " + href);
+
     // Open this link as a webapp
     aEvent.preventDefault();
     aEvent.stopPropagation();
-
-    let newInfo = this.getTabInfoForWebApp(newDesc);
-    if (newInfo) {
-      let tabmail = document.getElementById('tabmail');
-      tabmail.switchToTab(newInfo);
-      newInfo.browser.loadURI(href, null, null);
-    }
-    else {
-      this.openTab(newDesc, href);
-    }
+    this.openWebApp(newDesc, href);
   },
 
   onBackClick: function(aEvent) {
@@ -342,49 +350,94 @@ const webtabs = {
 
   // nsIXULBrowserWindow bits
   onBeforeLinkTraversal: function(aOriginalTarget, aLinkURI, aLinkNode, aIsAppTab) {
-    let newTarget = this.oldOnBeforeLinkTraversal.call(MsgStatusFeedback, aLinkURI, aLinkNode, aIsAppTab);
+    let newTarget = this.oldOnBeforeLinkTraversal.call(MsgStatusFeedback, aOriginalTarget, aLinkURI, aLinkNode, aIsAppTab);
 
-    LOG("onBeforeLinkTraversal " + aLinkURI.spec);
-    let win = aLinkNode.ownerDocument.defaultView;
-    let docShell = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                      .getInterface(Ci.nsIWebNavigation)
-                      .QueryInterface(Ci.nsIDocShellTreeItem);
+    function logResult(aTarget, aReason) {
+      LOG("onBeforeLinkTraversal " + aLinkURI.spec + " targetted at " +
+          "'" + newTarget + "': new target '" + aTarget + "' - " + aReason);
+    }
+
+    let originalWin = aLinkNode.ownerDocument.defaultView;
+    let targetWin = originalWin;
+    let docShell = originalWin.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIWebNavigation)
+                              .QueryInterface(Ci.nsIDocShellTreeItem);
 
     let targetDocShell = docShell.findItemWithName(newTarget, docShell, docShell);
     if (targetDocShell) {
-      win = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIDOMWindowInternal);
+      targetWin = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIDOMWindowInternal);
     }
 
     // If this is attempting to load an inner frame then just continue
-    if (win.top != win)
+    if (targetWin.top != targetWin) {
+      logResult(newTarget, "Inner frame load");
       return newTarget;
+    }
 
-    originDesc = ConfigManager.getWebAppForURL(win.location.toString());
-    // If the requesting document isn't a webapp then allow the load as normal
-    if (!originDesc)
+    originDesc = ConfigManager.getWebAppForURL(targetWin.location.toString());
+    // If the target window isn't a webapp then allow the load as normal
+    if (!originDesc) {
+      logResult(newTarget, "Non-webapp origin");
       return newTarget;
+    }
 
     let targetDesc = ConfigManager.getWebAppForURL(aLinkURI.spec);
 
-    // If this isn't the load of a webapp or is the load of the same webapp then
-    // just continue with the load. The content policy will stop the load of
-    // a non-web-app for us
-    if (!targetDesc || targetDesc == originDesc)
+    // If this is a load of the same webapp then allow it to continue
+    if (originDesc == targetDesc) {
+      if (!targetDocShell) {
+        logResult("_top", "Same-webapp load to an unknown docshell");
+        return "_top";
+      }
+      logResult(newTarget, "Same-webapp load");
       return newTarget;
-
-    let newInfo = this.getTabInfoForWebApp(targetDesc);
-    if (newInfo) {
-      document.getElementById('tabmail').switchToTab(newInfo);
-      newInfo.browser.loadURI(aLinkURI.spec, null, null);
-    }
-    else {
-      this.openTab(targetDesc, aLinkURI.spec);
     }
 
-    // Make sure the content policy will handle this by not opening a new tab
+    // If this isn't the load of a webapp then, the content policy will redirect
+    // the load.
+    if (!targetDesc) {
+      logResult(newTarget, "Non-webapp load");
+      return newTarget;
+    }
+
+    logResult("_top", "Different webapp load, retargetted");
+    this.openWebApp(targetDesc, aLinkURI.spec);
+
+    // Make sure the content policy will abort this by not opening a new tab
     // and doing a full document load
     return "_top";
+  },
+
+  // nsIBrowserDOMWindow implementation
+  openURI: function(aURI, aOpener, aWhere, aContext) {
+    function logResult(aReason) {
+      LOG("openURI from " + (aOpener ? aOpener.location.toString() : null) +
+          " - " + aReason);
+    }
+
+    // We don't know what the target URL is at this point. If the opener is a
+    // webapp then open the link in a new browser, wait for it to be taken over
+    // by the content policy
+    let desc = ConfigManager.getWebAppForURL(aOpener.location.toString());
+    if (desc) {
+      let browser = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
+                                             "browser");
+      browser.setAttribute("type", "content");
+      browser.setAttribute("style", "width: 0px; height: 0px");
+      browser.setAttribute("class", "webapptab-browser");
+      document.documentElement.appendChild(browser);
+
+      logResult("Opener is a webapp, redirecting to hidden browser");
+      return browser.contentWindow;
+    }
+
+    logResult("Opener is not a webapp, continuing as normal");
+    return this.oldBrowserDOMWindow.openURI(aURI, aOpener, aWhere, aContext);
+  },
+
+  isTabContentWindow: function(aWindow) {
+    return this.oldBrowserDOMWindow.isTabContentWindow(aWindow);
   },
 
   // nsIEventHandler implementation
