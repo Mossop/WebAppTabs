@@ -95,6 +95,22 @@ function shutdown(aParams, aReason) {
   Components.utils.unload("resource://webapptabs/modules/ConfigManager.jsm");
   Components.utils.unload("resource://webapptabs/modules/LogManager.jsm");
 
+  // Evil, but the content policy cache seems to be broken somehow
+  let oldEntries = [];
+  let cm = Cc["@mozilla.org/categorymanager;1"].
+           getService(Ci.nsICategoryManager);
+  let entries = cm.enumerateCategory("content-policy");
+  while (entries.hasMoreElements()) {
+    let entry = entries.getNext().QueryInterface(Ci.nsISupportsCString).data;
+    let value = cm.getCategoryEntry("content-policy", entry);
+    oldEntries.push([entry, value]);
+  }
+
+  cm.deleteCategory("content-policy");
+  oldEntries.forEach(function([aEntry, aValue]) {
+    cm.addCategoryEntry("content-policy", aEntry, aValue, false, true);
+  });
+
   // Remove our chrome registration
   Components.manager.removeBootstrappedManifestLocation(aParams.installPath)
 

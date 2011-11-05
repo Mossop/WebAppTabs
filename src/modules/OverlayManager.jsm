@@ -112,15 +112,15 @@ const OverlayManagerInternal = {
         }, this);
       }
 
-      this.components.forEach(function(aCid) {
-        let factory = Cm.getClassObject(aCid, Ci.nsIFactory);
-        Cm.unregisterFactory(aCid, factory);
-      });
-
       let cm = Cc["@mozilla.org/categorymanager;1"].
                getService(Ci.nsICategoryManager);
       this.categories.forEach(function(aEntry) {
         cm.deleteCategoryEntry(aEntry[0], aEntry[1], false);
+      });
+
+      this.components.forEach(function(aCid) {
+        let factory = Cm.getClassObject(aCid, Ci.nsIFactory);
+        Cm.unregisterFactory(aCid, factory);
       });
     }
     catch (e) {
