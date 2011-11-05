@@ -79,6 +79,17 @@ const ConfigManager = {
     this.changeListeners.splice(pos, 1);
   },
 
+  isURLForWebApp: function(aURL, aDesc) {
+    return aURL.substring(0, aDesc.href.length) == aDesc.href;
+  },
+
+  getWebAppForURL: function(aURL) {
+    let descs = this.webappList.filter(this.isURLForWebApp.bind(this, aURL));
+    if (descs.length > 0)
+      return descs[0];
+    return null;
+  },
+
   updatePrefs: function() {
     this.webappList.forEach(function(aDesc) {
       if (!aDesc.id)

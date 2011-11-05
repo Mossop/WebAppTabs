@@ -53,6 +53,7 @@ const webtabs = {
   backButton: null,
   // The forward context menu item
   forwardButton: null,
+  oldOnBeforeLinkTraversal: null,
 
   onLoad: function() {
     this.buttonContainer = document.getElementById("webapptabs-buttons");
@@ -72,9 +73,14 @@ const webtabs = {
     this.backButton.addEventListener("command", this, false);
     this.forwardButton = document.getElementById("webapptabs-context-forward")
     this.forwardButton.addEventListener("command", this, false);
+
+    this.oldOnBeforeLinkTraversal = MsgStatusFeedback.onBeforeLinkTraversal;
+    MsgStatusFeedback.onBeforeLinkTraversal = this.onBeforeLinkTraversal.bind(this);
   },
 
   onUnload: function() {
+    MsgStatusFeedback.onBeforeLinkTraversal = this.oldOnBeforeLinkTraversal;
+
     this.backButton.removeEventListener("command", this, false);
     this.forwardButton.removeEventListener("command", this, false);
     document.getElementById("mailContext").removeEventListener("popupshowing", this, false);
@@ -155,17 +161,6 @@ const webtabs = {
       ERROR("Missing webapp button for " + aDesc.name);
   },
 
-  isURLForWebApp: function(aURL, aDesc) {
-    return aURL.substring(0, aDesc.href.length) == aDesc.href;
-  },
-
-  getWebAppForURL: function(aURL) {
-    let descs = ConfigManager.webappList.filter(this.isURLForWebApp.bind(this, aURL));
-    if (descs.length > 0)
-      return descs[0];
-    return null;
-  },
-
   getTabInfoForWebApp: function(aDesc) {
     let tabmail = document.getElementById('tabmail');
 
@@ -173,7 +168,7 @@ const webtabs = {
       if (!("browser" in aTabInfo))
         return false;
 
-      return this.isURLForWebApp(aTabInfo.browser.currentURI.spec, aDesc);
+      return ConfigManager.isURLForWebApp(aTabInfo.browser.currentURI.spec, aDesc);
     }, this);
 
     if (tabs.length > 0)
@@ -295,46 +290,37 @@ const webtabs = {
     if (!aEvent.isTrusted || aEvent.getPreventDefault() || aEvent.button)
       return;
 
+    // If this is a click in a webapp then ignore it, onBeforeLinkTraversal and
+    // the content policy will handle it
+    if (("browser" in info) && ConfigManager.getWebAppForURL(info.browser.currentURI.spec)) {
+      // If the load is for the same webapp that the tab is already displaying
+      // then just allow the event to proceed as normal.
+      return;
+    }
+
     let href = hRefForClickEvent(aEvent, true);
     if (!href)
       return;
 
     LOG("Saw url " + href);
 
-    // If this URL matches a webapp then switch to or open that
-    let newDesc = this.getWebAppForURL(href);
-    if (newDesc) {
-      if (newDesc == this.getWebAppForURL(info.browser.currentURI.spec)) {
-        // If the load is for the same webapp that the tab is already displaying
-        // then just allow the event to proceed as normal.
-        return;
-      }
-
-      aEvent.preventDefault();
-      aEvent.stopPropagation();
-
-      let newInfo = this.getTabInfoForWebApp(newDesc);
-      if (newInfo) {
-        let tabmail = document.getElementById('tabmail');
-        tabmail.switchToTab(newInfo);
-        newInfo.browser.loadURI(href, null, null);
-      }
-      else {
-        this.openTab(newDesc, href);
-      }
+    // If this URL isn't for a webapp then continue as normal
+    let newDesc = ConfigManager.getWebAppForURL(href);
+    if (!newDesc)
       return;
+
+    // Open this link as a webapp
+    aEvent.preventDefault();
+    aEvent.stopPropagation();
+
+    let newInfo = this.getTabInfoForWebApp(newDesc);
+    if (newInfo) {
+      let tabmail = document.getElementById('tabmail');
+      tabmail.switchToTab(newInfo);
+      newInfo.browser.loadURI(href, null, null);
     }
-
-    let protocolSvc = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
-                      getService(Ci.nsIExternalProtocolService);
-
-    let uri = makeURI(href);
-    if (!protocolSvc.isExposedProtocol(uri.scheme) ||
-        uri.schemeIs("http") || uri.schemeIs("https") ||
-        uri.schemeIs("about")) {
-      aEvent.preventDefault();
-      aEvent.stopPropagation();
-      openLinkExternally(href);
+    else {
+      this.openTab(newDesc, href);
     }
   },
 
@@ -354,6 +340,54 @@ const webtabs = {
     info.browser.goForward();
   },
 
+  // nsIXULBrowserWindow bits
+  onBeforeLinkTraversal: function(aOriginalTarget, aLinkURI, aLinkNode, aIsAppTab) {
+    let newTarget = this.oldOnBeforeLinkTraversal.call(MsgStatusFeedback, aLinkURI, aLinkNode, aIsAppTab);
+
+    LOG("onBeforeLinkTraversal " + aLinkURI.spec);
+    let win = aLinkNode.ownerDocument.defaultView;
+    let docShell = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                      .getInterface(Ci.nsIWebNavigation)
+                      .QueryInterface(Ci.nsIDocShellTreeItem);
+
+    let targetDocShell = docShell.findItemWithName(newTarget, docShell, docShell);
+    if (targetDocShell) {
+      win = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                    .getInterface(Ci.nsIDOMWindowInternal);
+    }
+
+    // If this is attempting to load an inner frame then just continue
+    if (win.top != win)
+      return newTarget;
+
+    originDesc = ConfigManager.getWebAppForURL(win.location.toString());
+    // If the requesting document isn't a webapp then allow the load as normal
+    if (!originDesc)
+      return newTarget;
+
+    let targetDesc = ConfigManager.getWebAppForURL(aLinkURI.spec);
+
+    // If this isn't the load of a webapp or is the load of the same webapp then
+    // just continue with the load. The content policy will stop the load of
+    // a non-web-app for us
+    if (!targetDesc || targetDesc == originDesc)
+      return newTarget;
+
+    let newInfo = this.getTabInfoForWebApp(targetDesc);
+    if (newInfo) {
+      document.getElementById('tabmail').switchToTab(newInfo);
+      newInfo.browser.loadURI(aLinkURI.spec, null, null);
+    }
+    else {
+      this.openTab(targetDesc, aLinkURI.spec);
+    }
+
+    // Make sure the content policy will handle this by not opening a new tab
+    // and doing a full document load
+    return "_top";
+  },
+
+  // nsIEventHandler implementation
   handleEvent: function(aEvent) {
     try {
       switch (aEvent.type) {

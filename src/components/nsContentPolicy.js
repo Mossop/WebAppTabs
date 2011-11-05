@@ -38,6 +38,7 @@
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
 LogManager.createLogger(this, "nsContentPolicy");
+Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
@@ -49,7 +50,40 @@ function nsContentPolicy() {
 
 nsContentPolicy.prototype = {
   shouldLoad: function(aContentType, aContentLocation, aRequestOrigin, aContext, aMimeTypeGuess, aExtra) {
-    return Ci.nsIContentPolicy.ACCEPT;
+    // We only care about full document loads
+    if (aContentType != Ci.nsIContentPolicy.TYPE_DOCUMENT)
+      return Ci.nsIContentPolicy.ACCEPT;
+
+    // Allow all non-web protocols to load
+    let scheme = aContentLocation.scheme;
+    if (scheme != "http" && scheme != "https" && scheme != "ftp")
+      return Ci.nsIContentPolicy.ACCEPT;
+
+    // If it wasn't a webapp loading this then allow it
+    if (!aRequestOrigin)
+      return Ci.nsIContentPolicy.ACCEPT;
+
+    let originDesc = ConfigManager.getWebAppForURL(aRequestOrigin.spec);
+    if (!originDesc)
+      return Ci.nsIContentPolicy.ACCEPT;
+
+    LOG("Attempt to load document " + aContentLocation.spec);
+    // If it's the same webapp then allow the load
+    let desc = ConfigManager.getWebAppForURL(aContentLocation.spec);
+    if (desc == originDesc)
+      return Ci.nsIContentPolicy.ACCEPT;
+
+    // If it's for another webapp then onBeforeLinkTraversal will have loaded
+    // the page so just block this load
+    if (desc)
+      return Ci.nsIContentPolicy.REJECT_SERVER;
+
+    // Otherwise load it externally
+    Cc["@mozilla.org/uriloader/external-protocol-service;1"].
+    getService(Components.interfaces.nsIExternalProtocolService).
+    loadUrl(aContentLocation);
+
+    return Ci.nsIContentPolicy.REJECT_SERVER;
   },
 
   shouldProcess: function(aContentType, aContentLocation, aRequestOrigin, aContext, aMimeType, aExtra) {
