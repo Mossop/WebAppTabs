@@ -242,11 +242,26 @@ const webtabs = {
     this.backButton.disabled = !info.browser.webNavigation.canGoBack;
     this.forwardButton.disabled = !info.browser.webNavigation.canGoForward;
 
-    let target = document.popupNode;
-
     // If the context menu already detected the area as editable then bail out
     if (gContextMenu.onEditableArea)
       return;
+
+    function initSpellchecking(aEditor) {
+      gContextMenu.onTextInput = true;
+      gContextMenu.onEditableArea = true;
+      gSpellChecker.init(aEditor);
+      gSpellChecker.initFromEvent(document.popupRangeParent, document.popupRangeOffset);
+      gContextMenu.initSpellingItems();
+    }
+
+    let target = document.popupNode;
+
+    // If the target is a text input with the spellcheck attribute then set it
+    // up for spellchecking
+    if (gContextMenu.onTextInput && target.getAttribute("spellcheck") == "true") {
+      initSpellchecking(target.QueryInterface(Ci.nsIDOMNSEditableElement).editor);
+      return;
+    }
 
     let win = target.ownerDocument.defaultView;
     if (!win)
@@ -267,11 +282,7 @@ const webtabs = {
       return;
     }
 
-    gContextMenu.onTextInput = true;
-    gContextMenu.onEditableArea = true;
-    gSpellChecker.init(editingSession.getEditorForWindow(win));
-    gSpellChecker.initFromEvent(document.popupRangeParent, document.popupRangeOffset);
-    gContextMenu.initSpellingItems();
+    initSpellchecking(editingSession.getEditorForWindow(win));
   },
 
   onContentClick: function(aEvent) {
