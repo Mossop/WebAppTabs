@@ -165,8 +165,15 @@ function shutdown(aParams, aReason) {
   let res = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
   res.setSubstitution("webapptabs", null);
 
-  // For testing invalidate the startup cache
-  Services.obs.notifyObservers(null, "startupcache-invalidate", null);
+  try {
+    if (!Services.prefs.getBoolPref("extensions.webapptabs.debug"))
+      return;
+
+    // For testing invalidate the startup cache
+    Services.obs.notifyObservers(null, "startupcache-invalidate", null);
+  }
+  catch (e) {
+  }
 }
 
 function uninstall(aParams, aReason) {
