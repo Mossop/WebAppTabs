@@ -421,8 +421,19 @@ const OverlayManagerInternal = {
         domWindow.removeEventListener("load", this, false);
         let windowURL = domWindow.location.toString();
         // Track this window if there are overlays for it
-        if (windowURL in this.overlays)
-          OverlayManagerInternal.createWindowEntry(domWindow, this.overlays[windowURL]);
+        if (windowURL in this.overlays) {
+          let tm = Cc["@mozilla.org/thread-manager;1"].
+                   getService(Ci.nsIThreadManager);
+
+          let overlays = this.overlays[windowURL];
+
+          // Defer adding overlays until immediately after the load events fire
+          tm.mainThread.dispatch({
+            run: function() {
+              OverlayManagerInternal.createWindowEntry(domWindow, overlays);
+            }
+          }, Ci.nsIThread.DISPATCH_NORMAL);
+        }
         break;
       case "unload":
         if (!this.windowEntryMap.has(domWindow)) {
