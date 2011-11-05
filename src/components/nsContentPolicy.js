@@ -69,7 +69,6 @@ nsContentPolicy.prototype = {
           ": " + aResult + " - " + aReason);
     }
 
-
     let originDesc = ConfigManager.getWebAppForURL(aRequestOrigin.spec);
     let desc = ConfigManager.getWebAppForURL(aContentLocation.spec);
 
