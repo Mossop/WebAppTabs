@@ -44,12 +44,44 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Ce = Components.Exception;
 const Cr = Components.results;
+const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 
 const XMLURI_PARSE_ERROR = "http://www.mozilla.org/newlayout/xml/parsererror.xml"
+
+function createSandbox(aPrincipal, aScriptURL, aPrototype) {
+  let args = {
+    sandboxName: aScriptURL
+  };
+
+  if (aPrototype)
+    args.sandboxPrototype = aPrototype;
+
+  let sandbox = Components.utils.Sandbox(aPrincipal, args);
+
+  try {
+    Components.utils.evalInSandbox(
+      "Components.classes['@mozilla.org/moz/jssubscript-loader;1']" +
+                ".createInstance(Components.interfaces.mozIJSSubScriptLoader)" +
+                ".loadSubScript('" + aScriptURL + "');", sandbox, "ECMAv5");
+  }
+  catch (e) {
+    WARN("Exception loading script " + aScriptURL, e);
+  }
+
+  return sandbox
+}
 
 const OverlayManager = {
   addOverlays: function(aOverlayList) {
     OverlayManagerInternal.addOverlays(aOverlayList);
+  },
+
+  addComponent: function(aCid, aComponentURL, aContract) {
+    OverlayManagerInternal.addComponent(aCid, aComponentURL, aContract);
+  },
+
+  addCategory: function(aCategory, aEntry, aValue) {
+    OverlayManagerInternal.addCategory(aCategory, aEntry, aValue);
   },
 
   unload: function() {
@@ -61,6 +93,8 @@ const OverlayManagerInternal = {
   windowEntryMap: new WeakMap(),
   windowEntries: {},
   overlays: {},
+  components: [],
+  categories: [],
 
   init: function() {
     LOG("init");
@@ -77,6 +111,17 @@ const OverlayManagerInternal = {
           this.destroyWindowEntry(aWindowEntry);
         }, this);
       }
+
+      this.components.forEach(function(aCid) {
+        let factory = Cm.getClassObject(aCid, Ci.nsIFactory);
+        Cm.unregisterFactory(aCid, factory);
+      });
+
+      let cm = Cc["@mozilla.org/categorymanager;1"].
+               getService(Ci.nsICategoryManager);
+      this.categories.forEach(function(aEntry) {
+        cm.deleteCategoryEntry(aEntry[0], aEntry[1], false);
+      });
     }
     catch (e) {
       ERROR("Exception during unload", e);
@@ -269,25 +314,17 @@ const OverlayManagerInternal = {
   loadScriptOverlay: function(aWindowEntry, aScriptURL) {
     LOG("Loading script overlay " + aScriptURL);
 
-    let sandbox = Components.utils.Sandbox(aWindowEntry.window, {
-      sandboxName: aScriptURL,
-      sandboxPrototype: aWindowEntry.window
-    });
-
-    try {
-      Components.utils.evalInSandbox(
-        "Components.classes['@mozilla.org/moz/jssubscript-loader;1']" +
-                  ".createInstance(Components.interfaces.mozIJSSubScriptLoader)" +
-                  ".loadSubScript('" + aScriptURL + "');", sandbox, "ECMAv5");
-
-      if ("OverlayListener" in sandbox && "load" in sandbox.OverlayListener)
-        sandbox.OverlayListener.load();
-    }
-    catch (e) {
-      WARN("Exception loading script overlay " + aScriptURL, e);
-    }
-
+    let sandbox = createSandbox(aWindowEntry.window, aScriptURL, aWindowEntry.window);
     aWindowEntry.scripts.push(sandbox);
+
+    if ("OverlayListener" in sandbox && "load" in sandbox.OverlayListener) {
+      try {
+          sandbox.OverlayListener.load();
+      }
+      catch (e) {
+        WARN("Exception calling script load event " + aScriptURL, e);
+      }
+    }
   },
 
   addOverlays: function(aOverlayList) {
@@ -335,6 +372,43 @@ const OverlayManagerInternal = {
     catch (e) {
       ERROR("Exception adding overlay list", e);
     }
+  },
+
+  addComponent: function(aCid, aComponentURL, aContract) {
+    aCid = Components.ID(aCid);
+    Cm.registerFactory(aCid, null, aContract, {
+      _sandbox: null,
+
+      createInstance: function(aOuter, aIID) {
+        if (!this._sandbox) {
+          let principal = Cc["@mozilla.org/systemprincipal;1"].
+                          createInstance(Ci.nsIPrincipal);
+          this._sandbox = createSandbox(principal, aComponentURL);
+        }
+
+        if (!("NSGetFactory" in this._sandbox)) {
+          ERROR("Component " + aComponentURL + " is missing NSGetFactory");
+          throw Cr.NS_ERROR_FACTORY_NOT_REGISTERED;
+        }
+
+        try {
+          return this._sandbox.NSGetFactory(aCid).createInstance(aOuter, aIID);
+        }
+        catch (e) {
+          ERROR("Exception initialising component " + aContract + " from " + aComponentURL, e);
+          throw e;
+        }
+      }
+    });
+
+    this.components.push(aCid);
+  },
+
+  addCategory: function(aCategory, aEntry, aValue) {
+    let cm = Cc["@mozilla.org/categorymanager;1"].
+             getService(Ci.nsICategoryManager);
+    cm.addCategoryEntry(aCategory, aEntry, aValue, false, true);
+    this.categories.push([aCategory, aEntry]);
   },
 
   // nsIEventListener implementation
