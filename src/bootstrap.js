@@ -5,7 +5,7 @@
  * 1.1 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
@@ -31,7 +31,7 @@
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the MPL, the GPL or the LGPL.
- * 
+ *
  * ***** END LICENSE BLOCK ***** */
 
 const Cc = Components.classes;
@@ -50,6 +50,48 @@ const OVERLAYS = {
     styles: [
       "chrome://webapptabs/skin/overlay.css"
     ]
+  }
+};
+
+var HttpObserver = {
+  getWindowFromChannel: function(aChannel) {
+    try {
+      var notificationCallbacks = aChannel.notificationCallbacks ?
+                                  aChannel.notificationCallbacks :
+                                  aChannel.loadGroup.notificationCallbacks;
+
+      if (!notificationCallbacks)
+        return null;
+
+      var domWin = notificationCallbacks.getInterface(Ci.nsIDOMWindow);
+      return domWin.top;
+    }
+    catch (e) {
+      Services.console.logStringMessage(e);
+      return null;
+    }
+  },
+
+  observe: function (aSubject, aTopic, aData) {
+    if (!(aSubject instanceof Ci.nsIHttpChannel))
+      return;
+
+    Services.console.logStringMessage("Saw load of " + aSubject.URI.spec);
+
+    let desc = ConfigManager.getWebAppForURL(aSubject.URI.spec);
+    if (!desc) {
+      let win = this.getWindowFromChannel(aSubject);
+      if (win)
+        desc = ConfigManager.getWebAppForURL(win.location.toString());
+    }
+
+    // If this isn't a load of a webapp tab then ignore it
+    if (!desc)
+      return;
+
+    let ua = aSubject.getRequestHeader("User-Agent");
+    ua = ua.replace("Thunderbird", "Firefox");
+    aSubject.setRequestHeader("User-Agent", ua, false);
   }
 };
 
@@ -73,12 +115,17 @@ function startup(aParams, aReason) {
   OverlayManager.addCategory("content-policy", "webapptabs-content-policy",
                              "@oxymoronical.com/webapptabs/content-policy;1");
   OverlayManager.addOverlays(OVERLAYS);
+
+  Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
+  Services.obs.addObserver(HttpObserver, "http-on-modify-request", false);
 }
 
 function shutdown(aParams, aReason) {
   // Don't need to clean anything up if the application is shutting down
   if (aReason == APP_SHUTDOWN)
     return;
+
+  Services.obs.removeObserver(HttpObserver, "http-on-modify-request");
 
   // Close any of our UI windows
   let windows = Services.wm.getEnumerator(null);
