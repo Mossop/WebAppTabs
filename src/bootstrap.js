@@ -94,6 +94,24 @@ var HttpObserver = {
   }
 };
 
+function flushContentPolicy() {
+  // Evil, but the content policy cache seems to be broken somehow
+  let oldEntries = [];
+  let cm = Cc["@mozilla.org/categorymanager;1"].
+           getService(Ci.nsICategoryManager);
+  let entries = cm.enumerateCategory("content-policy");
+  while (entries.hasMoreElements()) {
+    let entry = entries.getNext().QueryInterface(Ci.nsISupportsCString).data;
+    let value = cm.getCategoryEntry("content-policy", entry);
+    oldEntries.push([entry, value]);
+  }
+
+  cm.deleteCategory("content-policy");
+  oldEntries.forEach(function([aEntry, aValue]) {
+    cm.addCategoryEntry("content-policy", aEntry, aValue, false, true);
+  });
+}
+
 function install(aParams, aReason) {
 }
 
@@ -111,9 +129,13 @@ function startup(aParams, aReason) {
   OverlayManager.addComponent("{bd71af62-1b21-4f3a-829e-5254ec7da7f6}",
                               "resource://webapptabs/components/nsContentPolicy.js",
                               "@oxymoronical.com/webapptabs/content-policy;1");
+  OverlayManager.addComponent("{4aef66b9-3afb-464c-ae14-7718481cbb72}",
+                              "resource://webapptabs/components/nsMsgContentPolicy.js",
+                              "@mozilla.org/messenger/content-policy;1");
   OverlayManager.addCategory("content-policy", "webapptabs-content-policy",
                              "@oxymoronical.com/webapptabs/content-policy;1");
   OverlayManager.addOverlays(OVERLAYS);
+  flushContentPolicy();
 
   Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
   Services.obs.addObserver(HttpObserver, "http-on-modify-request", false);
@@ -141,21 +163,7 @@ function shutdown(aParams, aReason) {
   Components.utils.unload("resource://webapptabs/modules/ConfigManager.jsm");
   Components.utils.unload("resource://webapptabs/modules/LogManager.jsm");
 
-  // Evil, but the content policy cache seems to be broken somehow
-  let oldEntries = [];
-  let cm = Cc["@mozilla.org/categorymanager;1"].
-           getService(Ci.nsICategoryManager);
-  let entries = cm.enumerateCategory("content-policy");
-  while (entries.hasMoreElements()) {
-    let entry = entries.getNext().QueryInterface(Ci.nsISupportsCString).data;
-    let value = cm.getCategoryEntry("content-policy", entry);
-    oldEntries.push([entry, value]);
-  }
-
-  cm.deleteCategory("content-policy");
-  oldEntries.forEach(function([aEntry, aValue]) {
-    cm.addCategoryEntry("content-policy", aEntry, aValue, false, true);
-  });
+  flushContentPolicy();
 
   // Remove our chrome registration
   Components.manager.removeBootstrappedManifestLocation(aParams.installPath)
