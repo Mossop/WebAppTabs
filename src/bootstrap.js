@@ -64,10 +64,11 @@ var HttpObserver = {
         return null;
 
       var domWin = notificationCallbacks.getInterface(Ci.nsIDOMWindow);
+      if (domWin)
+        return null;
       return domWin.top;
     }
     catch (e) {
-      Services.console.logStringMessage(e);
       return null;
     }
   },
@@ -75,8 +76,6 @@ var HttpObserver = {
   observe: function (aSubject, aTopic, aData) {
     if (!(aSubject instanceof Ci.nsIHttpChannel))
       return;
-
-    Services.console.logStringMessage("Saw load of " + aSubject.URI.spec);
 
     let desc = ConfigManager.getWebAppForURL(aSubject.URI.spec);
     if (!desc) {
