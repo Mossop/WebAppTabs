@@ -99,6 +99,7 @@ const OverlayManagerInternal = {
   overlays: {},
   components: [],
   categories: [],
+  contracts: [],
 
   init: function() {
     LOG("init");
@@ -118,13 +119,17 @@ const OverlayManagerInternal = {
 
       let cm = Cc["@mozilla.org/categorymanager;1"].
                getService(Ci.nsICategoryManager);
-      this.categories.forEach(function(aEntry) {
-        cm.deleteCategoryEntry(aEntry[0], aEntry[1], false);
+      this.categories.forEach(function([aCategory, aEntry]) {
+        cm.deleteCategoryEntry(aCategory, aEntry, false);
       });
 
       this.components.forEach(function(aCid) {
         let factory = Cm.getClassObject(aCid, Ci.nsIFactory);
         Cm.unregisterFactory(aCid, factory);
+      });
+
+      this.contracts.forEach(function([aContract, aCid]) {
+        Cm.registerFactory(aCid, null, aContract, null);
       });
     }
     catch (e) {
@@ -379,6 +384,18 @@ const OverlayManagerInternal = {
   },
 
   addComponent: function(aCid, aComponentURL, aContract) {
+    if (aContract) {
+      try {
+        let cid = Cm.contractIDToCID(aContract);
+        // It's possible to have a contract to CID mapping when the CID doesn't
+        // exist
+        if (Cm.isCIDRegistered(cid))
+          this.contracts.push([aContract, cid]);
+      }
+      catch (e) {
+      }
+    }
+
     aCid = Components.ID(aCid);
     Cm.registerFactory(aCid, null, aContract, {
       _sandbox: null,
