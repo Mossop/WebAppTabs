@@ -110,9 +110,9 @@ function startup(aParams, aReason) {
   Components.utils.import("resource://webapptabs/modules/OverlayManager.jsm");
   OverlayManager.addComponent("{bd71af62-1b21-4f3a-829e-5254ec7da7f6}",
                               "resource://webapptabs/components/nsContentPolicy.js",
-                              "@oxymoronical.com/webapptabs/content-policy;1");
+                              "@fractalbrew.com/webapptabs/content-policy;1");
   OverlayManager.addCategory("content-policy", "webapptabs-content-policy",
-                             "@oxymoronical.com/webapptabs/content-policy;1");
+                             "@fractalbrew.com/webapptabs/content-policy;1");
   OverlayManager.addOverlays(OVERLAYS);
 
   Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
