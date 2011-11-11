@@ -11,15 +11,14 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is WebTabs.
+ * The Original Code is WebApp Tabs.
  *
  * The Initial Developer of the Original Code is
- * David Ascher.
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * Dave Townsend <dtownsend@oxymoronical.com>
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Dave Townsend <dtownsend@oxymoronical.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
