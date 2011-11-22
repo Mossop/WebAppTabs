@@ -26,6 +26,14 @@ The main goals are:
 * The webapp should behave as well in Thunderbird as it would if opened in
   Firefox
 
+Testing
+-------
+
+All fixes should include appropriate automated testing. In order to run the unit
+tests the mozbase submodule must first be pulled with `git submodule init` and
+`git submodule update`. Then running `python runtests.py` should run the tests
+and output any failures.
+
 Building
 --------
 
