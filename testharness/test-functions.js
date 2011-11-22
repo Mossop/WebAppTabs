@@ -44,16 +44,16 @@ function ok(aCondition, aMessage) {
 
 function is(aFound, aExpected, aMessage) {
   if (aFound == aExpected)
-    _logPass(aMessage);
+    _logPass(aMessage + ", " + aFound + " == " + aExpected);
   else
-    _logFail(aMessage);
+    _logFail(aMessage + ", " + aFound + " == " + aExpected);
 }
 
 function isnot(aFound, aNotExpected, aMessage) {
   if (aFound != aNotExpected)
-    _logPass(aMessage);
+    _logPass(aMessage + ", " + aFound + " != " + aExpected);
   else
-    _logFail(aMessage);
+    _logFail(aMessage + ", " + aFound + " != " + aExpected);
 }
 
 function unexpected(aMessage, aException) {
