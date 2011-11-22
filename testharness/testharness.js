@@ -38,11 +38,14 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
+Components.utils.import("resource://gre/modules/AddonManager.jsm");
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Ce = Components.Exception;
 const Cr = Components.results;
+
+const ADDONID = "webapptabs@fractalbrew.com";
 
 function TestFunctions(aHarness, aScriptURL) {
   this.harness = aHarness;
@@ -102,7 +105,19 @@ TestHarness.prototype = {
 
   // All of these are run as if they are members of TestHarness
   commands: {
-    runTest: function(aTestPath) {
+    disableAddon: function() {
+      let self = this;
+      AddonManager.getAddonByID(ADDONID, function(aAddon) {
+        if (!aAddon)
+          self.logFail("Add-on is missing");
+        else
+          aAddon.userDisabled = true;
+
+        self.runNextCommand();
+      });
+    },
+
+    runTest: function(aTestPath, aHeadFiles) {
       this.log("TEST-START " + aTestPath);
 
       let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
@@ -114,6 +129,17 @@ TestHarness.prototype = {
         self.log("TEST-END " + aTestPath);
         self.runNextCommand();
       });
+
+      if (aHeadFiles) {
+        aHeadFiles.forEach(function(aHeadPath) {
+          let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+          file.initWithPath(aHeadPath);
+          let url = NetUtil.newURI(file);
+          this.loadSandboxScript(sandbox, url);
+        }, this);
+      }
+
+      this.loadSandboxScript(sandbox, url);
 
       try {
         sandbox.waitForExplicitFinish();
@@ -151,17 +177,19 @@ TestHarness.prototype = {
         aFinishedCallback();
     }
 
+    return sandbox;
+  },
+
+  loadSandboxScript: function(aSandbox, aScriptURL) {
     try {
       Components.utils.evalInSandbox(
         "Components.classes['@mozilla.org/moz/jssubscript-loader;1']" +
                   ".createInstance(Components.interfaces.mozIJSSubScriptLoader)" +
-                  ".loadSubScript('" + aScriptURL.spec + "');", sandbox, "ECMAv5");
+                  ".loadSubScript('" + aScriptURL.spec + "');", aSandbox, "ECMAv5");
     }
     catch (e) {
-      this.logFail("Exception loading script " + aScriptURL, e);
+      this.logFail("Exception loading script " + aScriptURL.spec, e);
     }
-
-    return sandbox
   },
 
   loadCommands: function() {

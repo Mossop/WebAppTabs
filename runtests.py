@@ -15,8 +15,14 @@ from mozprofile import ThunderbirdProfile
 from mozrunner import ThunderbirdRunner
 import json
 
+def attrIsTrue(obj, attr):
+  return attr in obj and obj[attr] == 'true'
+
 class CommandFile():
-  commands = []
+  commands = None
+
+  def __init__(self):
+    self.commands = []
 
   def addCommand(self, command, arguments=[]):
     self.commands.append({
@@ -40,14 +46,30 @@ class TestManager():
     self.tests = tests
 
   def runTests(self):
+    if len(self.tests) == 0:
+      print("No tests to run")
+      return
+
+    test = self.tests[0]
+
     while len(self.tests) > 0:
       commands = CommandFile()
+
       while len(self.tests) > 0:
-        test = self.tests[0]
-        commands.addCommand('runTest', [test['path']])
+        heads = []
+        if 'head' in test:
+          heads.append(os.path.join(test['here'], test['head']))
+        commands.addCommand('runTest', [test['path'], heads])
         self.tests = self.tests[1:]
-        if test['restart'] == 'true':
-          break
+
+        if len(self.tests) > 0:
+          test = self.tests[0]
+          if attrIsTrue(test, 'startDisabled'):
+            commands.addCommand('disableAddon')
+            break
+          if attrIsTrue(test, 'restartBefore'):
+            break
+
       commands.writeCommands(self.profile)
 
       self.sawQuit = False
