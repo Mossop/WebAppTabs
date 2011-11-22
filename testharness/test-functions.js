@@ -55,3 +55,7 @@ function isnot(aFound, aNotExpected, aMessage) {
   else
     _logFail(aMessage);
 }
+
+function unexpected(aMessage, aException) {
+  _logFail(aMessage, aException);
+}
