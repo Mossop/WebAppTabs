@@ -47,41 +47,6 @@ const Cr = Components.results;
 
 const ADDONID = "webapptabs@fractalbrew.com";
 
-function TestFunctions(aHarness, aScriptURL) {
-  this.harness = aHarness;
-  this.script = aScriptURL;
-}
-
-TestFunctions.prototype = {
-  harness: null,
-  script: null,
-
-  info: function(aMessage) {
-    this.harness.log("TEST-INFO " + aMessage);
-  },
-
-  ok: function(aCondition, aMessage) {
-    if (aCondition)
-      this.harness.logPass(aMessage);
-    else
-      this.harness.logFail(aMessage);
-  },
-
-  is: function(aFound, aExpected, aMessage) {
-    if (aFound == aExpected)
-      this.harness.logPass(aMessage);
-    else
-      this.harness.logFail(aMessage);
-  },
-
-  isnot: function(aFound, aNotExpected, aMessage) {
-    if (aFound != aNotExpected)
-      this.harness.logPass(aMessage);
-    else
-      this.harness.logFail(aMessage);
-  }
-};
-
 function TestHarness() {
 }
 
@@ -161,11 +126,9 @@ TestHarness.prototype = {
     };
 
     let sandbox = Components.utils.Sandbox(this.window, args);
-
-    let functions = new TestFunctions(this, aScriptURL);
-    ["info", "ok", "is", "isnot"].forEach(function(aFunc) {
-      sandbox[aFunc] = functions[aFunc].bind(functions);
-    });
+    ["log", "logPass", "logFail"].forEach(function(aFunc) {
+      sandbox["_" + aFunc] = this[aFunc].bind(this);
+    }, this);
 
     let self = this;
     let pending = 0;
@@ -176,6 +139,8 @@ TestHarness.prototype = {
       if (--pending == 0)
         aFinishedCallback();
     }
+
+    this.loadSandboxScript(sandbox, NetUtil.newURI("resource://testharness/test-functions.js"));
 
     return sandbox;
   },
