@@ -100,11 +100,11 @@ TestHarness.prototype = {
           let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
           file.initWithPath(aHeadPath);
           let url = NetUtil.newURI(file);
-          this.loadSandboxScript(sandbox, url);
+          sandbox.importScript(url.spec);
         }, this);
       }
 
-      this.loadSandboxScript(sandbox, url);
+      sandbox.importScript(url.spec);
 
       try {
         sandbox.waitForExplicitFinish();
@@ -140,21 +140,16 @@ TestHarness.prototype = {
         aFinishedCallback();
     }
 
-    this.loadSandboxScript(sandbox, NetUtil.newURI("resource://testharness/test-functions.js"));
+    sandbox.importScript = function(aURL) {
+      let url = NetUtil.newURI(aURL, null, aScriptURL);
+      Cc['@mozilla.org/moz/jssubscript-loader;1'].
+      createInstance(Ci.mozIJSSubScriptLoader).
+      loadSubScript(url.spec, sandbox);
+    }
+
+    sandbox.importScript("resource://testharness/test-functions.js");
 
     return sandbox;
-  },
-
-  loadSandboxScript: function(aSandbox, aScriptURL) {
-    try {
-      Components.utils.evalInSandbox(
-        "Components.classes['@mozilla.org/moz/jssubscript-loader;1']" +
-                  ".createInstance(Components.interfaces.mozIJSSubScriptLoader)" +
-                  ".loadSubScript('" + aScriptURL.spec + "');", aSandbox, "ECMAv5");
-    }
-    catch (e) {
-      this.logFail("Exception loading script " + aScriptURL.spec, e);
-    }
   },
 
   loadCommands: function() {
