@@ -471,7 +471,7 @@ const OverlayManagerInternal = {
           ERROR("Saw unload event for unknown window " + domWindow.location);
           return;
         }
-        let windowEntry = this.windowEntryMap.get(aDOMWindow);
+        let windowEntry = this.windowEntryMap.get(domWindow);
         OverlayManagerInternal.destroyWindowEntry(windowEntry);
         break;
       }
