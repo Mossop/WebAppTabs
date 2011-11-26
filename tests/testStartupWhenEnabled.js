@@ -2,6 +2,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+// Basic tests that starting and stopping the extension builds the right UI
 importScript("startup-tests.js");
 
 function test() {
