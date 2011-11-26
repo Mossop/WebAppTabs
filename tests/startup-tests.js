@@ -42,7 +42,7 @@ function testBasicState() {
 
 function testWebappClick() {
   waitForNewTab(function(aTab) {
-    is(aTab.browser.currentURI.spec, "http://twitter.com/",
+    is(aTab.browser.currentURI.spec, "https://twitter.com/",
        "Should have loaded the right URL");
 
     closeTab(aTab, function() {

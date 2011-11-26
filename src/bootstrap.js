@@ -77,11 +77,11 @@ var HttpObserver = {
     if (!(aSubject instanceof Ci.nsIHttpChannel))
       return;
 
-    let desc = ConfigManager.getWebAppForURL(aSubject.URI.spec);
+    let desc = ConfigManager.getWebAppForURL(aSubject.URI);
     if (!desc) {
       let win = this.getWindowFromChannel(aSubject);
       if (win)
-        desc = ConfigManager.getWebAppForURL(win.location.toString());
+        desc = ConfigManager.getWebAppForURL(win.document.documentURIObject);
     }
 
     // If this isn't a load of a webapp tab then ignore it

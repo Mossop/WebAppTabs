@@ -68,8 +68,8 @@ nsContentPolicy.prototype = {
           ": " + aResult + " - " + aReason);
     }
 
-    let originDesc = ConfigManager.getWebAppForURL(aRequestOrigin.spec);
-    let desc = ConfigManager.getWebAppForURL(aContentLocation.spec);
+    let originDesc = ConfigManager.getWebAppForURL(aRequestOrigin);
+    let desc = ConfigManager.getWebAppForURL(aContentLocation);
 
     if (aContext instanceof Ci.nsIDOMNode && aContext.localName == "browser" &&
         aContext.className == "webapptab-browser") {
