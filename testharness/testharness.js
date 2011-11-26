@@ -270,7 +270,7 @@ TestHarness.prototype = {
       break;
     case "mail-startup-done":
       Services.obs.removeObserver(this, "mail-startup-done");
-      this.window = aSubject.QueryInterface(Ci.nsIDOMWindowInternal);
+      this.window = aSubject.QueryInterface(Ci.nsIDOMWindow);
       // Hacky but does the job
       this.window.setTimeout(this.runCommands.bind(this), 100);
       break;

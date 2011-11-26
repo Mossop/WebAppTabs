@@ -366,7 +366,7 @@ const webtabs = {
     let targetDocShell = docShell.findItemWithName(newTarget, docShell, docShell);
     if (targetDocShell) {
       targetWin = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIDOMWindowInternal);
+                          .getInterface(Ci.nsIDOMWindow);
     }
 
     // If this is attempting to load an inner frame then just continue
