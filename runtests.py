@@ -81,12 +81,19 @@ class TestManager():
     self.runner = runner
     self.tests = tests
 
+  def sanityCheck(self, test, isFirst):
+    if attrIsTrue(test, 'resetProfile') and attrIsTrue(test, 'startDisabled'):
+      self.processFailLine("Cannot reset profile and start disabled for the same test")
+    if attrIsTrue(test, 'startDisabled') and isFirst:
+      self.processFailLine("Cannot start disabled for the first test")
+
   def runTests(self):
     if len(self.tests) == 0:
       print("No tests to run")
       return
 
     test = self.tests[0]
+    self.sanityCheck(test, True)
 
     while len(self.tests) > 0:
       commands = CommandFile()
@@ -100,10 +107,11 @@ class TestManager():
 
         if len(self.tests) > 0:
           test = self.tests[0]
+          self.sanityCheck(test, False)
           if attrIsTrue(test, 'startDisabled'):
             commands.addCommand('disableAddon')
             break
-          if attrIsTrue(test, 'restartBefore'):
+          if attrIsTrue(test, 'restartBefore') or attrIsTrue(test, 'resetProfile'):
             break
 
       commands.writeCommands(self.profile)
@@ -113,6 +121,8 @@ class TestManager():
       self.runner.wait()
       if not self.sawQuit:
         self.processFailLine("Unexpected application exit")
+      if attrIsTrue(test, 'resetProfile'):
+        self.profile.reset()
     print("\n%d tests passed, %d tests failed" % (self.passCount, self.failCount))
 
   def processOutputLine(self, line):
