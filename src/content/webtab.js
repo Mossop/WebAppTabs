@@ -41,10 +41,10 @@ Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
 LogManager.createLogger(this, "webtab");
 Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Ce = Components.Exception;
-const Cr = Components.results;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Ce = Components.Exception;
+var Cr = Components.results;
 
 const webtabs = {
   // The UI element that contains the webapp buttons

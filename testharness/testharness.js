@@ -113,7 +113,10 @@ TestHarness.prototype = {
     dump("!!!FAIL: " + aStr + "\n");
 
     if (aException) {
-      dump("!!!FAILLOG: Exception: " + aException + "\n");
+      if ("message" in aException)
+        dump("!!!FAILLOG: Exception: " + aException.message + "\n");
+      else
+        dump("!!!FAILLOG: Exception: " + aException + "\n");
       var frames = exceptionLine(aException);
       if (aException instanceof Ci.nsIException && aException.location)
         frames = stackFrames(aException.location);
@@ -183,7 +186,7 @@ TestHarness.prototype = {
 
   createTestSandbox: function(aScriptURL, aFinishedCallback) {
     let args = {
-      sandboxName: aScriptURL,
+      sandboxName: aScriptURL.spec,
       sandboxPrototype: this.window
     };
 
@@ -204,9 +207,14 @@ TestHarness.prototype = {
 
     sandbox.importScript = function(aURL) {
       let url = NetUtil.newURI(aURL, null, aScriptURL);
-      Cc['@mozilla.org/moz/jssubscript-loader;1'].
-      createInstance(Ci.mozIJSSubScriptLoader).
-      loadSubScript(url.spec, sandbox);
+      try {
+        Cc['@mozilla.org/moz/jssubscript-loader;1'].
+        createInstance(Ci.mozIJSSubScriptLoader).
+        loadSubScript(url.spec, sandbox);
+      }
+      catch (e) {
+        self.logFail("Error while loading " + url.spec + " into test sandbox", e);
+      }
     }
 
     sandbox.importScript("resource://testharness/test-functions.js");
