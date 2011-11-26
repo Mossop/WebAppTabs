@@ -3,7 +3,7 @@
  */
 
 const WEBAPPS = [{
-  'id': "Google_Calendar",
+  'id': 'Google_Calendar',
   'tooltiptext': 'Google Calendar',
   'image': 'https://calendar.google.com/googlecalendar/images/favicon.ico',
 }, {
@@ -17,7 +17,6 @@ const WEBAPPS = [{
 }, {
   'id': 'Twitter',
   'tooltiptext': 'Twitter',
-  'image': 'https://www.twitter.com/favicon.ico',
 }];
 
 function testBasicState() {
@@ -37,4 +36,31 @@ function testBasicState() {
     pos++;
     webapp = webapp.nextSibling;
   }
+
+  testWebappClick();
+}
+
+function testWebappClick() {
+  waitForNewTab(function(aTab) {
+    is(aTab.browser.currentURI.spec, "http://twitter.com/",
+       "Should have loaded the right URL");
+
+    closeTab(aTab, function() {
+      testShutdown();
+    });
+  });
+
+  var app = document.getElementById("Twitter");
+  clickElement(app);
+}
+
+function testShutdown() {
+  getAddon(function(aAddon) {
+    aAddon.userDisabled = true;
+
+    let hbox = document.getElementById("webapptabs-buttons");
+    ok(!hbox, "Overlay element removed");
+
+    aAddon.userDisabled = false;
+  });
 }
