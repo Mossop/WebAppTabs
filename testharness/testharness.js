@@ -47,6 +47,43 @@ const Cr = Components.results;
 
 const ADDONID = "webapptabs@fractalbrew.com";
 
+function stackFrames(aFrame) {
+  while (aFrame) {
+    yield({
+      name: aFrame.name,
+      file: aFrame.filename,
+      line: aFrame.lineNumber
+    })
+
+    aFrame = aFrame.caller;
+  }
+}
+
+function exceptionStack(aException) {
+  let matcher = /^([^\(]*)\(.*\)\@(.*):(\d+)$/;
+
+  let frames = aException.stack.split("\n");
+  for (let i = 0; i < frames.length; i++) {
+    let results = matcher.exec(frames[i]);
+    if (!results)
+      continue;
+
+    yield({
+      name: results[1].length > 0 ? results[1] : null,
+      file: results[2].length > 0 ? results[2] : null,
+      line: results[3]
+    });
+  }
+}
+
+function exceptionLine(aException) {
+  yield({
+    name: null,
+    file: aException.fileName,
+    line: aException.lineNumber
+  })
+}
+
 function TestHarness() {
 }
 
@@ -62,10 +99,35 @@ TestHarness.prototype = {
     dump("!!!PASS: " + aStr + "\n");
   },
 
+  getFilename: function(aFilename) {
+    if (!aFilename)
+      return "<unknown>";
+    if (aFilename.indexOf(" -> ") != -1)
+      aFilename = aFilename.substring(aFilename.indexOf(" -> ") + 4);
+    if (aFilename.indexOf("/tests/") != -1)
+      aFilename = aFilename.substring(aFilename.indexOf("/tests/") + 7);
+    return aFilename;
+  },
+
   logFail: function(aStr, aException) {
     dump("!!!FAIL: " + aStr + "\n");
-    if (aException)
-      dump("!!!INFO:           Exception: " + aException + "\n");
+
+    if (aException) {
+      dump("!!!FAILLOG: Exception: " + aException + "\n");
+      var frames = exceptionLine(aException);
+      if (aException instanceof Ci.nsIException && aException.location)
+        frames = stackFrames(aException.location);
+      else if (aException.stack)
+        frames = exceptionStack(aException);
+    }
+    else {
+      frames = stackFrames(Components.stack.caller.caller.caller);
+    }
+
+    for (let frame in frames) {
+      let name = frame.name || "<anon>";
+      dump("!!!FAILLOG: " + name + "() @ " + this.getFilename(frame.file) + ":" + frame.line + "\n")
+    }
   },
 
   // All of these are run as if they are members of TestHarness

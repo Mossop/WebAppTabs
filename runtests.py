@@ -142,6 +142,8 @@ class TestManager():
       self.processPassLine(line[9:])
     elif line[0:9] == "!!!FAIL: ":
       self.processFailLine(line[9:])
+    elif line[0:12] == "!!!FAILLOG: ":
+      self.processFailLogLine(line[12:])
     elif line[0:9] == "!!!INFO: ":
       self.processInfoLine(line[9:])
     else:
@@ -154,6 +156,9 @@ class TestManager():
   def processFailLine(self, line):
     self.failCount += 1
     print("TEST-FAIL %s" % line)
+
+  def processFailLogLine(self, line):
+    print("          %s" % line)
 
   def processInfoLine(self, line):
     if line == "TEST-QUIT":

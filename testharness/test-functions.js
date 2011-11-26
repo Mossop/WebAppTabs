@@ -42,7 +42,10 @@ function info(aMessage) {
 }
 
 function ok(aCondition, aMessage) {
-  is(!!aCondition, true, aMessage);
+  if (aCondition)
+    _logPass(aMessage + ", " + aCondition + " == " + true);
+  else
+    _logFail(aMessage + ", " + aCondition + " == " + true);
 }
 
 function is(aFound, aExpected, aMessage) {
