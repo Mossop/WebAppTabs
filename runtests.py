@@ -53,6 +53,7 @@ import json
 import threading
 import SocketServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
+from optparse import OptionParser
 
 def attrIsTrue(obj, attr):
   return attr in obj and obj[attr] == 'true'
@@ -272,7 +273,16 @@ addons = [
 manifest = TestManifest([os.path.join(basedir, 'tests/tests.ini')])
 tests = manifest.active_tests(disabled=False)
 profile = TestProfile(addons=addons)
-runner = ThunderbirdRunner(profile=profile, process_class=TestProcess)
+
+parser = OptionParser()
+parser.add_option('-b', "--binary",
+                  dest="binary", help="Binary path.",
+                   metavar=None, default=None)
+
+(options, args) = parser.parse_args(sys.argv[1:])
+
+runner = ThunderbirdRunner(profile=profile, process_class=TestProcess,
+                           binary=options.binary)
 manager = TestManager(profile, runner, tests)
 
 manager.runTests()
