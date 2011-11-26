@@ -208,6 +208,8 @@ const webtabs = {
       clickHandler: "return true;"
     });
 
+    info.browser.setAttribute("tooltip", "aHTMLTooltip");
+
     // Only get new favicons when loading the normal webapp url
     if (aURL)
       return;

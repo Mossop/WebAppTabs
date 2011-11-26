@@ -84,3 +84,12 @@ function closeTab(aTab, aCallback) {
   if (aCallback)
     safeCall(aCallback);
 }
+
+function waitForEvent(aElement, aEvent, aCallback, aCapture) {
+  waitForExplicitFinish();
+  aElement.addEventListener(aEvent, function(aEv) {
+    aElement.removeEventListener(aEvent, arguments.callee, aCapture);
+    safeCall(aCallback.bind(null, aEv));
+    finish();
+  }, aCapture);
+}

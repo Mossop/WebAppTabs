@@ -75,6 +75,30 @@ function safeCall(aCallback) {
   }
 }
 
+function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent)
+{
+  var utils = aTarget.ownerDocument.defaultView
+                     .QueryInterface(Ci.nsIInterfaceRequestor)
+                     .getInterface(Ci.nsIDOMWindowUtils);
+
+  var button = aEvent.button || 0;
+  var clickCount = aEvent.clickCount || 1;
+  var modifiers = 0;
+
+  var rect = aTarget.getBoundingClientRect();
+
+  var left = rect.left + aOffsetX;
+  var top = rect.top + aOffsetY;
+
+  if (aEvent.type) {
+    utils.sendMouseEvent(aEvent.type, left, top, button, clickCount, modifiers);
+  }
+  else {
+    utils.sendMouseEvent("mousedown", left, top, button, clickCount, modifiers);
+    utils.sendMouseEvent("mouseup", left, top, button, clickCount, modifiers);
+  }
+}
+
 function clickElement(aTarget) {
   var utils = aTarget.ownerDocument.defaultView
                      .QueryInterface(Ci.nsIInterfaceRequestor)
