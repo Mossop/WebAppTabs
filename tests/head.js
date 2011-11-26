@@ -7,12 +7,7 @@ Components.utils.import("resource://gre/modules/AddonManager.jsm");
 function getAddon(aCallback) {
   waitForExplicitFinish();
   AddonManager.getAddonByID("webapptabs@fractalbrew.com", function(aAddon) {
-    try {
-      aCallback(aAddon);
-    }
-    catch (e) {
-      unexpected("getAddon callback threw an exception", e);
-    }
+    safeCall(aCallback.bind(null, aAddon));
     finish();
   });
 }
@@ -20,21 +15,8 @@ function getAddon(aCallback) {
 function enableAddon(aCallback) {
   getAddon(function(aAddon) {
     aAddon.userDisabled = false;
-    aCallback();
+    safeCall(aCallback);
   });
-}
-
-function clickElement(aTarget) {
-  var utils = aTarget.ownerDocument.defaultView
-                     .QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Components.interfaces.nsIDOMWindowUtils);
-
-  var rect = aTarget.getBoundingClientRect();
-
-  var left = rect.left + rect.width / 2;
-  var top = rect.top + rect.height / 2;
-  utils.sendMouseEvent("mousedown", left, top, 0, 1, 0);
-  utils.sendMouseEvent("mouseup", left, top, 0, 1, 0);
 }
 
 function TabListener(aCallbacks) {
@@ -57,13 +39,10 @@ TabListener.prototype = {
   },
 
   onTabOpened: function(aTab, aIsFirstTab, aWasCurrentTab) {
-    let self = this;
-    aTab.browser.addEventListener("load", function() {
-      if ("onTabOpened" in self.callbacks)
-        self.callbacks.onTabOpened(aTab, aIsFirstTab, aWasCurrentTab);
-      else
-        unexpected("Wasn't expecting a new tab to open: " + aTab.browser.currentURI.spec);
-    }, true);
+    if ("onTabOpened" in this.callbacks)
+      waitForTabLoad(aTab, this.callbacks.onTabOpened);
+    else
+      unexpected("Wasn't expecting a new tab to open: " + aTab.browser.currentURI.spec);
   },
 
   onTabClosing: function(aTab) {
@@ -85,13 +64,23 @@ function waitForNewTab(aCallback) {
   let listener = new TabListener({
     onTabOpened: function(aTab) {
       listener.destroy();
-      aCallback(aTab);
+      safeCall(aCallback.bind(null, aTab));
       finish();
     }
   });
 }
 
+function waitForTabLoad(aTab, aCallback) {
+  waitForExplicitFinish();
+  aTab.browser.addEventListener("load", function() {
+    aTab.browser.removeEventListener("load", arguments.callee, true);
+    waitForFocus(aTab.browser.contentWindow, aCallback.bind(null, aTab));
+    finish();
+  }, true);
+}
+
 function closeTab(aTab, aCallback) {
   document.getElementById("tabmail").closeTab(aTab);
-  aCallback();
+  if (aCallback)
+    safeCall(aCallback);
 }
