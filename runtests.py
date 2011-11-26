@@ -50,9 +50,15 @@ from mozprocess import ProcessHandlerMixin
 from mozprofile import ThunderbirdProfile
 from mozrunner import ThunderbirdRunner
 import json
+import threading
+import SocketServer
+from SimpleHTTPServer import SimpleHTTPRequestHandler
 
 def attrIsTrue(obj, attr):
   return attr in obj and obj[attr] == 'true'
+
+class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+  pass
 
 class CommandFile():
   commands = None
@@ -80,6 +86,12 @@ class TestManager():
     self.profile = profile
     self.runner = runner
     self.tests = tests
+
+    os.chdir(os.path.join(basedir, "tests/data"))
+    self.server = ThreadedTCPServer(("", 8080), SimpleHTTPRequestHandler)
+    thread = threading.Thread(target=self.server.serve_forever)
+    thread.daemon = True
+    thread.start()
 
   def sanityCheck(self, test, isFirst):
     if attrIsTrue(test, 'resetProfile') and attrIsTrue(test, 'startDisabled'):
