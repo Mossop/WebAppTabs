@@ -137,8 +137,8 @@ const webtabs = {
         }
       }
 
-      // Webapp doesn't exist, create it
-      this.createWebAppButton(aDesc);
+      // Webapp doesn't exist, create it and put it in the right place
+      let button = this.createWebAppButton(aDesc, before);
     }, this);
 
     // Remove any remaining buttons
