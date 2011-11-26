@@ -99,6 +99,8 @@ function executeSoon(aCallback) {
 }
 
 function waitForFocus(aWindow, aCallback, aExpectBlankPage, aWaitVars) {
+  waitForExplicitFinish();
+
   if (!aWindow)
     aWindow = window;
 
@@ -119,6 +121,7 @@ function waitForFocus(aWindow, aCallback, aExpectBlankPage, aWaitVars) {
     if (waitVars.loaded && waitVars.focused && !waitVars.started) {
       waitVars.started = true;
       executeSoon(aCallback);
+      finish();
     }
   }
 
