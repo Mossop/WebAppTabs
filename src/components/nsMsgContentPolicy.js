@@ -71,7 +71,7 @@ nsMsgContentPolicy.prototype = {
     let win = aContext.ownerDocument.defaultView.top;
 
     // If the window isn't for a webapp then return the default policy's result
-    let desc = ConfigManager.getWebAppForURL(win.location.toString());
+    let desc = ConfigManager.getWebAppForURL(win.document.documentURIObject);
     if (!desc)
       return originalResult;
 
