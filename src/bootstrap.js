@@ -77,11 +77,11 @@ var HttpObserver = {
     if (!(aSubject instanceof Ci.nsIHttpChannel))
       return;
 
-    let desc = ConfigManager.getWebAppForURL(aSubject.URI.spec);
+    let desc = ConfigManager.getWebAppForURL(aSubject.URI);
     if (!desc) {
       let win = this.getWindowFromChannel(aSubject);
       if (win)
-        desc = ConfigManager.getWebAppForURL(win.location.toString());
+        desc = ConfigManager.getWebAppForURL(win.document.documentURIObject);
     }
 
     // If this isn't a load of a webapp tab then ignore it
@@ -128,12 +128,12 @@ function startup(aParams, aReason) {
   Components.utils.import("resource://webapptabs/modules/OverlayManager.jsm");
   OverlayManager.addComponent("{bd71af62-1b21-4f3a-829e-5254ec7da7f6}",
                               "resource://webapptabs/components/nsContentPolicy.js",
-                              "@oxymoronical.com/webapptabs/content-policy;1");
+                              "@fractalbrew.com/webapptabs/content-policy;1");
   OverlayManager.addComponent("{4aef66b9-3afb-464c-ae14-7718481cbb72}",
                               "resource://webapptabs/components/nsMsgContentPolicy.js",
                               "@mozilla.org/messenger/content-policy;1");
   OverlayManager.addCategory("content-policy", "webapptabs-content-policy",
-                             "@oxymoronical.com/webapptabs/content-policy;1");
+                             "@fractalbrew.com/webapptabs/content-policy;1");
   OverlayManager.addOverlays(OVERLAYS);
   flushContentPolicy();
 

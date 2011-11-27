@@ -62,7 +62,8 @@ function createSandbox(aPrincipal, aScriptURL, aPrototype) {
     Components.utils.evalInSandbox(
       "Components.classes['@mozilla.org/moz/jssubscript-loader;1']" +
                 ".createInstance(Components.interfaces.mozIJSSubScriptLoader)" +
-                ".loadSubScript('" + aScriptURL + "');", sandbox, "ECMAv5");
+                ".loadSubScript(" + JSON.stringify(aScriptURL) + ");",
+      sandbox, "ECMAv5");
   }
   catch (e) {
     WARN("Exception loading script " + aScriptURL, e);
@@ -470,7 +471,7 @@ const OverlayManagerInternal = {
           ERROR("Saw unload event for unknown window " + domWindow.location);
           return;
         }
-        let windowEntry = this.windowEntryMap.get(aDOMWindow);
+        let windowEntry = this.windowEntryMap.get(domWindow);
         OverlayManagerInternal.destroyWindowEntry(windowEntry);
         break;
       }
@@ -483,7 +484,7 @@ const OverlayManagerInternal = {
   // nsIWindowMediatorListener implementation
   onOpenWindow: function(aXULWindow) {
     let domWindow = aXULWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIDOMWindowInternal);
+                              .getInterface(Ci.nsIDOMWindow);
 
     // We can't get the window's URL until it is loaded
     domWindow.addEventListener("load", this, false);

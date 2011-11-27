@@ -41,10 +41,10 @@ Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
 LogManager.createLogger(this, "webtab");
 Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Ce = Components.Exception;
-const Cr = Components.results;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Ce = Components.Exception;
+var Cr = Components.results;
 
 const webtabs = {
   // The UI element that contains the webapp buttons
@@ -137,8 +137,8 @@ const webtabs = {
         }
       }
 
-      // Webapp doesn't exist, create it
-      this.createWebAppButton(aDesc);
+      // Webapp doesn't exist, create it and put it in the right place
+      let button = this.createWebAppButton(aDesc, before);
     }, this);
 
     // Remove any remaining buttons
@@ -183,7 +183,7 @@ const webtabs = {
       if (!("browser" in aTabInfo))
         return false;
 
-      return ConfigManager.isURLForWebApp(aTabInfo.browser.currentURI.spec, aDesc);
+      return ConfigManager.isURLForWebApp(aTabInfo.browser.currentURI, aDesc);
     }, this);
 
     if (tabs.length > 0)
@@ -207,6 +207,8 @@ const webtabs = {
       contentPage: aURL ? aURL : aDesc.href,
       clickHandler: "return true;"
     });
+
+    info.browser.setAttribute("tooltip", "aHTMLTooltip");
 
     // Only get new favicons when loading the normal webapp url
     if (aURL)
@@ -309,7 +311,7 @@ const webtabs = {
 
     // If this is a click in a webapp then ignore it, onBeforeLinkTraversal and
     // the content policy will handle it
-    if (("browser" in info) && ConfigManager.getWebAppForURL(info.browser.currentURI.spec)) {
+    if (("browser" in info) && ConfigManager.getWebAppForURL(info.browser.currentURI)) {
       // If the load is for the same webapp that the tab is already displaying
       // then just allow the event to proceed as normal.
       return;
@@ -320,7 +322,7 @@ const webtabs = {
       return;
 
     // If this URL isn't for a webapp then continue as normal
-    let newDesc = ConfigManager.getWebAppForURL(href);
+    let newDesc = ConfigManager.getWebAppForURL(NetUtil.newURI(href));
     if (!newDesc)
       return;
 
@@ -366,7 +368,7 @@ const webtabs = {
     let targetDocShell = docShell.findItemWithName(newTarget, docShell, docShell);
     if (targetDocShell) {
       targetWin = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIDOMWindowInternal);
+                          .getInterface(Ci.nsIDOMWindow);
     }
 
     // If this is attempting to load an inner frame then just continue
@@ -375,14 +377,14 @@ const webtabs = {
       return newTarget;
     }
 
-    originDesc = ConfigManager.getWebAppForURL(targetWin.location.toString());
+    originDesc = ConfigManager.getWebAppForURL(targetWin.document.documentURIObject);
     // If the target window isn't a webapp then allow the load as normal
     if (!originDesc) {
       logResult(newTarget, "Non-webapp origin");
       return newTarget;
     }
 
-    let targetDesc = ConfigManager.getWebAppForURL(aLinkURI.spec);
+    let targetDesc = ConfigManager.getWebAppForURL(aLinkURI);
 
     // If this is a load of the same webapp then allow it to continue
     if (originDesc == targetDesc) {
@@ -419,7 +421,7 @@ const webtabs = {
     // We don't know what the target URL is at this point. If the opener is a
     // webapp then open the link in a new browser, wait for it to be taken over
     // by the content policy
-    let desc = ConfigManager.getWebAppForURL(aOpener.location.toString());
+    let desc = ConfigManager.getWebAppForURL(aOpener.document.documentURIObject);
     if (desc) {
       let browser = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
                                              "browser");

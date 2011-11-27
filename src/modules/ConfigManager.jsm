@@ -37,6 +37,7 @@
 const EXPORTED_SYMBOLS = ["ConfigManager"];
 
 Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/NetUtil.jsm");
 Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
 LogManager.createLogger(this, "ConfigManager");
 
@@ -62,7 +63,7 @@ const DEFAULT_WEBAPPS = [{
   'icon': 'https://ssl.gstatic.com/s2/oz/images/favicon.ico',
 }, {
   'name': 'Twitter',
-  'href': 'https://www.twitter.com',
+  'href': 'https://twitter.com',
   'icon': 'https://www.twitter.com/favicon.ico',
 }];
 
@@ -80,7 +81,35 @@ const ConfigManager = {
   },
 
   isURLForWebApp: function(aURL, aDesc) {
-    return aURL.substring(0, aDesc.href.length) == aDesc.href;
+    let descURL = NetUtil.newURI(aDesc.href);
+
+    function schemeMatches() {
+      // Allow http and https to mean the same thing for now
+      if (descURL.scheme == aURL.scheme)
+        return true;
+      if (descURL.scheme == "https" && aURL.scheme == "http")
+        return true;
+      if (descURL.scheme == "http" && aURL.scheme == "https")
+        return true;
+      return false;
+    }
+
+    function hostMatches() {
+      // Trim off any leading "www." before comparing hostnames
+      let descHost = descURL.hostPort;
+      if (descHost.substring(0, 4) == "www.")
+        descHost = descHost.substring(4);
+      let urlHost = aURL.hostPort;
+      if (urlHost.substring(0, 4) == "www.")
+        urlHost = urlHost.substring(4);
+
+      return urlHost == descHost;
+    }
+
+    if (!schemeMatches() || !hostMatches())
+      return false;
+
+    return aURL.path.substring(0, descURL.path.length) == descURL.path;
   },
 
   getWebAppForURL: function(aURL) {

@@ -2,20 +2,23 @@
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#" 
  xmlns:em="http://www.mozilla.org/2004/em-rdf#">
   <Description about="urn:mozilla:install-manifest">
-    <em:id>webapptabs@oxymoronical.com</em:id>
+    <em:id>webapptabs@fractalbrew.com</em:id>
     <em:bootstrap>true</em:bootstrap>
     <em:optionsURL>chrome://webapptabs/content/config.xul</em:optionsURL>
 
     <em:name>WebApp Tabs</em:name>
-    <em:version>1.0a1</em:version>
+    <em:version>2.0a1</em:version>
     <em:creator>Dave Townsend</em:creator>
-    <em:contributor>David Ascher</em:contributor>
+    <em:contributor>David Ascher (original code)</em:contributor>
+    <em:description>Load WebApps into tabs in Thunderbird</em:description>
+    <em:homepageURL>http://www.fractalbrew.com/webapp-tabs/</em:homepageURL>
 
+    <!-- Thunderbird -->
     <em:targetApplication>
       <Description>
-        <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id> <!-- thunderbird -->
-        <em:minVersion>8.0b3</em:minVersion>
-        <em:maxVersion>8.0.*</em:maxVersion>
+        <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
+        <em:minVersion>8.0a2</em:minVersion>
+        <em:maxVersion>11.0a1</em:maxVersion>
       </Description>
     </em:targetApplication>
   </Description>
