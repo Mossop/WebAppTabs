@@ -27,7 +27,7 @@ function test() {
   waitForNewTab(function(aTab) {
     is(aTab.browser.currentURI.spec, "http://localhost:8080/webapp1/",
        "Should have loaded the right url");
-    let links = ["test3-1", "test3-2", "test3-3", "test3-4"];
+    let links = ["test3-1", "test3-2", "test3-3", "test3-4", "test3-5"];
 
     let listener = new TabListener();
     let eventListener = function() {

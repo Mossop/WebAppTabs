@@ -58,7 +58,7 @@ function test() {
         is(aSecondTab.browser.currentURI.spec, "http://localhost:8080/webapp2/subpage.html",
            "Should have not have altered the url");
 
-        var links = ["test2-1", "test2-2", "test2-3", "test2-4"];
+        var links = ["test2-1", "test2-2", "test2-3", "test2-4", "test2-5"];
 
         function clickNextLink() {
           if (links.length == 0) {
