@@ -377,11 +377,17 @@ const webtabs = {
       return newTarget;
     }
 
-    originDesc = ConfigManager.getWebAppForURL(targetWin.document.documentURIObject);
+    let originDesc = ConfigManager.getWebAppForURL(targetWin.document.documentURIObject);
     // If the target window isn't a webapp then allow the load as normal
     if (!originDesc) {
       logResult(newTarget, "Non-webapp origin");
       return newTarget;
+    }
+
+    if (aLinkURI.scheme == "javascript") {
+      logResult("", "Javascript load");
+      targetWin.location = aLinkURI.spec;
+      return "";
     }
 
     let targetDesc = ConfigManager.getWebAppForURL(aLinkURI);
@@ -414,7 +420,7 @@ const webtabs = {
   // nsIBrowserDOMWindow implementation
   openURI: function(aURI, aOpener, aWhere, aContext) {
     function logResult(aReason) {
-      LOG("openURI from " + (aOpener ? aOpener.location.toString() : null) +
+      LOG("openURI from " + (aOpener ? aOpener.document.documentURIObject.spec : null) +
           " - " + aReason);
     }
 

@@ -30,6 +30,8 @@ function test() {
     let tooltip = document.getElementById("aHTMLTooltip");
     waitForEvent(tooltip, "popupshown", function() {
       is(tooltip.label, "This title has a tooltip", "Tooltip label should be correct");
+
+      closeTab(aTab);
     });
 
     let title = aTab.browser.contentDocument.getElementById("title");

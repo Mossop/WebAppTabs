@@ -94,11 +94,29 @@ var HttpObserver = {
   }
 };
 
+function flushContentPolicy() {
+  // Evil, but the content policy cache seems to be broken somehow
+  let oldEntries = [];
+  let cm = Cc["@mozilla.org/categorymanager;1"].
+           getService(Ci.nsICategoryManager);
+  let entries = cm.enumerateCategory("content-policy");
+  while (entries.hasMoreElements()) {
+    let entry = entries.getNext().QueryInterface(Ci.nsISupportsCString).data;
+    let value = cm.getCategoryEntry("content-policy", entry);
+    oldEntries.push([entry, value]);
+  }
+
+  cm.deleteCategory("content-policy");
+  oldEntries.forEach(function([aEntry, aValue]) {
+    cm.addCategoryEntry("content-policy", aEntry, aValue, false, true);
+  });
+}
+
 function install(aParams, aReason) {
 }
 
 function startup(aParams, aReason) {
-  // Register the resource://webapptaps/ mapping
+  // Register the resource://webapptabs/ mapping
   Components.utils.import("resource://gre/modules/Services.jsm");
   let res = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
   res.setSubstitution("webapptabs", aParams.resourceURI);
@@ -141,21 +159,7 @@ function shutdown(aParams, aReason) {
   Components.utils.unload("resource://webapptabs/modules/ConfigManager.jsm");
   Components.utils.unload("resource://webapptabs/modules/LogManager.jsm");
 
-  // Evil, but the content policy cache seems to be broken somehow
-  let oldEntries = [];
-  let cm = Cc["@mozilla.org/categorymanager;1"].
-           getService(Ci.nsICategoryManager);
-  let entries = cm.enumerateCategory("content-policy");
-  while (entries.hasMoreElements()) {
-    let entry = entries.getNext().QueryInterface(Ci.nsISupportsCString).data;
-    let value = cm.getCategoryEntry("content-policy", entry);
-    oldEntries.push([entry, value]);
-  }
-
-  cm.deleteCategory("content-policy");
-  oldEntries.forEach(function([aEntry, aValue]) {
-    cm.addCategoryEntry("content-policy", aEntry, aValue, false, true);
-  });
+  flushContentPolicy();
 
   // Remove our chrome registration
   Components.manager.removeBootstrappedManifestLocation(aParams.installPath)
