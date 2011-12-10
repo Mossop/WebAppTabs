@@ -116,7 +116,7 @@ function install(aParams, aReason) {
 }
 
 function startup(aParams, aReason) {
-  // Register the resource://webapptaps/ mapping
+  // Register the resource://webapptabs/ mapping
   Components.utils.import("resource://gre/modules/Services.jsm");
   let res = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
   res.setSubstitution("webapptabs", aParams.resourceURI);
@@ -126,14 +126,18 @@ function startup(aParams, aReason) {
 
   // Load the overlay manager
   Components.utils.import("resource://webapptabs/modules/OverlayManager.jsm");
+  OverlayManager.setPreference("network.protocol-handler.expose.javascript", true);
   OverlayManager.addComponent("{bd71af62-1b21-4f3a-829e-5254ec7da7f6}",
                               "resource://webapptabs/components/nsContentPolicy.js",
                               "@fractalbrew.com/webapptabs/content-policy;1");
-  OverlayManager.addComponent("{4aef66b9-3afb-464c-ae14-7718481cbb72}",
-                              "resource://webapptabs/components/nsMsgContentPolicy.js",
-                              "@mozilla.org/messenger/content-policy;1");
   OverlayManager.addCategory("content-policy", "webapptabs-content-policy",
                              "@fractalbrew.com/webapptabs/content-policy;1");
+  OverlayManager.addComponent("{4aef66b9-3afb-464c-ae14-7718481cbb72}",
+                              "resource://webapptabs/components/nsMsgContentPolicy.js",
+                              "@fractalbrew.com/webapptabs/msg-content-policy;1");
+  OverlayManager.removeCategory("content-policy", "@mozilla.org/messenger/content-policy;1");
+  OverlayManager.addCategory("content-policy", "webapptabs-msg-content-policy",
+                             "@fractalbrew.com/webapptabs/msg-content-policy;1");
   OverlayManager.addOverlays(OVERLAYS);
   flushContentPolicy();
 

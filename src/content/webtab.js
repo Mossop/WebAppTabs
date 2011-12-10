@@ -377,7 +377,7 @@ const webtabs = {
       return newTarget;
     }
 
-    originDesc = ConfigManager.getWebAppForURL(targetWin.document.documentURIObject);
+    let originDesc = ConfigManager.getWebAppForURL(targetWin.document.documentURIObject);
     // If the target window isn't a webapp then allow the load as normal
     if (!originDesc) {
       logResult(newTarget, "Non-webapp origin");

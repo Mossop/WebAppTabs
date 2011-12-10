@@ -48,7 +48,7 @@ const Ce = Components.Exception;
 const Cr = Components.results;
 
 function nsMsgContentPolicy() {
-  this.msgContentPolicy = Components.classesByID["{DBFCFDF0-4489-4faa-8122-190FD1EFA16C}"].
+  this.msgContentPolicy = Cc["@mozilla.org/messenger/content-policy;1"].
                           getService(Ci.nsIContentPolicy);
 }
 
@@ -68,10 +68,12 @@ nsMsgContentPolicy.prototype = {
     if (!(aContext instanceof Ci.nsIDOMNode))
       return originalResult;
 
-    let win = aContext.ownerDocument.defaultView.top;
+    // Check that it's a XUL browser element
+    if (!aContext.localName == "browser" || !aContext.namespaceURI == "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")
+      return originalResult;
 
     // If the window isn't for a webapp then return the default policy's result
-    let desc = ConfigManager.getWebAppForURL(win.document.documentURIObject);
+    let desc = ConfigManager.getWebAppForURL(aContext.currentURI);
     if (!desc)
       return originalResult;
 

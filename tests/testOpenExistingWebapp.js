@@ -71,6 +71,8 @@ function test() {
             waitForTabLoad(aSecondTab, function(aNewTab) {
               is(aNewTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
                  "Should have loaded the right url");
+              is(document.getElementById("tabmail").selectedTab, aSecondTab,
+                 "Should have selected the right tab");
               clickNextLink();
             });
 
@@ -80,8 +82,6 @@ function test() {
             ok(link, "Link should exist");
   
             clickElement(link);
-            is(document.getElementById("tabmail").selectedTab, aSecondTab,
-               "Should have selected the right tab");
           });
         }
 
