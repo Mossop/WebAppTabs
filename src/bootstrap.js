@@ -126,20 +126,12 @@ function startup(aParams, aReason) {
 
   // Load the overlay manager
   Components.utils.import("resource://webapptabs/modules/OverlayManager.jsm");
-  OverlayManager.setPreference("network.protocol-handler.expose.javascript", true);
   OverlayManager.addComponent("{bd71af62-1b21-4f3a-829e-5254ec7da7f6}",
                               "resource://webapptabs/components/nsContentPolicy.js",
                               "@fractalbrew.com/webapptabs/content-policy;1");
   OverlayManager.addCategory("content-policy", "webapptabs-content-policy",
                              "@fractalbrew.com/webapptabs/content-policy;1");
-  OverlayManager.addComponent("{4aef66b9-3afb-464c-ae14-7718481cbb72}",
-                              "resource://webapptabs/components/nsMsgContentPolicy.js",
-                              "@fractalbrew.com/webapptabs/msg-content-policy;1");
-  OverlayManager.removeCategory("content-policy", "@mozilla.org/messenger/content-policy;1");
-  OverlayManager.addCategory("content-policy", "webapptabs-msg-content-policy",
-                             "@fractalbrew.com/webapptabs/msg-content-policy;1");
   OverlayManager.addOverlays(OVERLAYS);
-  flushContentPolicy();
 
   Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
   Services.obs.addObserver(HttpObserver, "http-on-modify-request", false);
