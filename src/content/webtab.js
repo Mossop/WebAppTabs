@@ -384,7 +384,7 @@ const webtabs = {
       return newTarget;
     }
 
-    if (aLinkURI.scheme = "javascript") {
+    if (aLinkURI.scheme == "javascript") {
       logResult("", "Javascript load");
       targetWin.location = aLinkURI.spec;
       return "";
