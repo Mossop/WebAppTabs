@@ -85,14 +85,6 @@ const OverlayManager = {
     OverlayManagerInternal.addCategory(aCategory, aEntry, aValue);
   },
 
-  removeCategory: function(aCategory, aEntry) {
-    OverlayManagerInternal.removeCategory(aCategory, aEntry);
-  },
-
-  setPreference: function(aName, aValue) {
-    OverlayManagerInternal.setPreference(aName, aValue);
-  },
-
   getScriptContext: function(aWindow, aScriptURL) {
     return OverlayManagerInternal.getScriptContext(aWindow, aScriptURL);
   },
@@ -108,9 +100,7 @@ const OverlayManagerInternal = {
   overlays: {},
   components: [],
   categories: [],
-  oldcategories: [],
   contracts: [],
-  preferences: [],
 
   init: function() {
     LOG("init");
@@ -134,10 +124,6 @@ const OverlayManagerInternal = {
         cm.deleteCategoryEntry(aCategory, aEntry, false);
       });
 
-      this.oldcategories.forEach(function([aCategory, aEntry, aValue]) {
-        cm.addCategoryEntry(aCategory, aEntry, aValue, false, true);
-      });
-
       this.components.forEach(function(aCid) {
         let factory = Cm.getClassObject(aCid, Ci.nsIFactory);
         Cm.unregisterFactory(aCid, factory);
@@ -145,17 +131,6 @@ const OverlayManagerInternal = {
 
       this.contracts.forEach(function([aContract, aCid]) {
         Cm.registerFactory(aCid, null, aContract, null);
-      });
-
-      this.preferences.forEach(function([aName, aValue]) {
-        if (aValue === undefined)
-          Services.prefs.clearUserPref(aName);
-        else if (aValue instanceof String)
-          Services.prefs.setCharPref(aName, aValue);
-        else if (aValue instanceof Number)
-          Services.prefs.setIntPref(aName, aValue);
-        else
-          Services.prefs.setBoolPref(aName, aValue);
       });
     }
     catch (e) {
@@ -456,48 +431,6 @@ const OverlayManagerInternal = {
              getService(Ci.nsICategoryManager);
     cm.addCategoryEntry(aCategory, aEntry, aValue, false, true);
     this.categories.push([aCategory, aEntry]);
-  },
-
-  removeCategory: function(aCategory, aEntry) {
-    try {
-      let cm = Cc["@mozilla.org/categorymanager;1"].
-               getService(Ci.nsICategoryManager);
-      let value = cm.getCategoryEntry(aCategory, aEntry);
-      cm.deleteCategoryEntry(aCategory, aEntry, false);
-      this.oldcategories.push([aCategory, aEntry, value]);
-    }
-    catch (e) {
-      WARN("Could not remove category entry " + aEntry + " from " + aCategory, e);
-    }
-  },
-
-  setPreference: function(aName, aValue) {
-    if (Services.prefs.prefHasUserValue(aName)) {
-      let type = Services.prefs.getPrefType(aName);
-      switch (type) {
-      case Ci.nsIPrefBranch.PREF_STRING:
-        value = Services.prefs.getCharPref(aName);
-        break;
-      case Ci.nsIPrefBranch.PREF_INT:
-        value = Services.prefs.getIntPref(aName);
-        break;
-      case Ci.nsIPrefBranch.PREF_BOOL:
-        value = Services.prefs.getBoolPref(aName);
-        break;
-      }
-
-      this.preferences.push([aName, value]);
-    }
-    else {
-      this.preferences.push([aName, undefined]);
-    }
-
-    if (aValue instanceof String)
-      Services.prefs.setCharPref(aName, aValue);
-    else if (aValue instanceof Number)
-      Services.prefs.setIntPref(aName, aValue);
-    else
-      Services.prefs.setBoolPref(aName, aValue);
   },
 
   getScriptContext: function(aDOMWindow, aScriptURL) {
