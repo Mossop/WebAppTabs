@@ -16,10 +16,12 @@ const TESTAPPS = [{
 
 Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
-function test() {
+function init_test() {
   ConfigManager.webappList = TESTAPPS;
   ConfigManager.updatePrefs();
+}
 
+add_test(function test_created_tab() {
   let app2 = document.getElementById("Test_2");
   ok(app2, "Should have the second webapp");
 
@@ -40,4 +42,4 @@ function test() {
   });
 
   clickElement(app2);
-}
+});

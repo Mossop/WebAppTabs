@@ -5,7 +5,7 @@
 // Basic tests that starting and stopping the extension builds the right UI
 importScript("startup-tests.js");
 
-function test() {
+function init_test() {
   getAddon(function(aAddon) {
     ok(aAddon.userDisabled, "Add-on should not be enabled");
 
@@ -13,7 +13,11 @@ function test() {
     ok(!hbox, "Overlay element shouldn't exist");
 
     enableAddon(function() {
-      testBasicState();
+      run_next_test();
     });
   });
 }
+
+add_test(testBasicState);
+add_test(testWebappClick);
+add_test(testShutdown);

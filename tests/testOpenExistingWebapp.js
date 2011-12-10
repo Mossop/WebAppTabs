@@ -17,75 +17,52 @@ const TESTAPPS = [{
 
 Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
-function prepTest(aFirstTab, aSecondTab, aCallback) {
+var gFirstTab, secontTab;
+
+function prepTest(gFirstTab, gSecondTab, aCallback) {
   function selectTab() {
-    document.getElementById("tabmail").switchToTab(aFirstTab);
+    document.getElementById("tabmail").switchToTab(gFirstTab);
     aCallback();
   }
 
-  if (aSecondTab.browser.currentURI.spec != "http://localhost:8080/webapp2/subpage.html") {
-    waitForTabLoad(aSecondTab, selectTab);
-    clickElement(aSecondTab.browser.contentDocument.getElementById("sublink"));
+  if (gSecondTab.browser.currentURI.spec != "http://localhost:8080/webapp2/subpage.html") {
+    waitForTabLoad(gSecondTab, selectTab);
+    clickElement(gSecondTab.browser.contentDocument.getElementById("sublink"));
   }
   else {
     selectTab();
   }
 }
 
-function test() {
+function init_test() {
   ConfigManager.webappList = TESTAPPS;
   ConfigManager.updatePrefs();
 
   let app1 = document.getElementById("Test_1");
   ok(app1, "Should have the first webapp");
 
-  waitForNewTab(function(aFirstTab) {
-    is(aFirstTab.browser.currentURI.spec, "http://localhost:8080/webapp1/",
+  waitForNewTab(function(aTab) {
+    gFirstTab = aTab;
+    is(gFirstTab.browser.currentURI.spec, "http://localhost:8080/webapp1/",
        "Should have loaded the right url");
 
     let app2 = document.getElementById("Test_2");
     ok(app2, "Should have the second webapp");
 
-    waitForNewTab(function(aSecondTab) {
-      is(aSecondTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
+    waitForNewTab(function(aTab) {
+      gSecondTab = aTab;
+      is(gSecondTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
          "Should have loaded the right url");
 
-      prepTest(aFirstTab, aSecondTab, function() {
+      prepTest(gFirstTab, gSecondTab, function() {
         clickElement(app2);
 
-        is(document.getElementById("tabmail").selectedTab, aSecondTab,
+        is(document.getElementById("tabmail").selectedTab, gSecondTab,
            "Should have selected the right tab");
-        is(aSecondTab.browser.currentURI.spec, "http://localhost:8080/webapp2/subpage.html",
+        is(gSecondTab.browser.currentURI.spec, "http://localhost:8080/webapp2/subpage.html",
            "Should have not have altered the url");
 
-        var links = ["test2-1", "test2-2", "test2-3", "test2-4", "test2-5"];
-
-        function clickNextLink() {
-          if (links.length == 0) {
-            closeTab(aFirstTab);
-            closeTab(aSecondTab);
-            return;
-          }
-
-          prepTest(aFirstTab, aSecondTab, function() {
-            waitForTabLoad(aSecondTab, function(aNewTab) {
-              is(aNewTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
-                 "Should have loaded the right url");
-              is(document.getElementById("tabmail").selectedTab, aSecondTab,
-                 "Should have selected the right tab");
-              clickNextLink();
-            });
-
-            let id = links.shift();
-            info("Testing link " + id);
-            let link = aFirstTab.browser.contentDocument.getElementById(id);
-            ok(link, "Link should exist");
-  
-            clickElement(link);
-          });
-        }
-
-        clickNextLink();
+        run_next_test();
       });
     });
 
@@ -94,3 +71,32 @@ function test() {
 
   clickElement(app1);
 }
+
+function finish_test() {
+  closeTab(gFirstTab);
+  closeTab(gSecondTab);
+}
+
+function click_link(aLink) {
+  prepTest(gFirstTab, gSecondTab, function() {
+    waitForTabLoad(gSecondTab, function(aNewTab) {
+      is(aNewTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
+         "Should have loaded the right url");
+      is(document.getElementById("tabmail").selectedTab, gSecondTab,
+         "Should have selected the right tab");
+
+      run_next_test();
+    });
+
+    info("Testing link " + aLink);
+    let link = gFirstTab.browser.contentDocument.getElementById(aLink);
+    ok(link, "Link should exist");
+
+    clickElement(link);
+  });
+}
+
+let links = ["test2-1", "test2-2", "test2-3", "test2-4", "test2-5"];
+links.forEach(function(aLink) {
+  add_test(click_link.bind(null, aLink));
+});

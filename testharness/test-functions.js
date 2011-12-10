@@ -197,3 +197,28 @@ function waitForFocus(aWindow, aCallback, aExpectBlankPage, aWaitVars) {
     childTargetWindow.focus();
   }
 };
+
+var TESTS = [];
+
+function run_next_test() {
+  if (TESTS.length == 0) {
+    if ("finish_test" in this)
+      finish_test();
+    return;
+  }
+
+  let test = TESTS.shift();
+  info("Running test " + test.name);
+  test();
+}
+
+function add_test(aTest) {
+  TESTS.push(aTest);
+}
+
+function test() {
+  if ("init_test" in this)
+    init_test();
+  else
+    run_next_test();
+}

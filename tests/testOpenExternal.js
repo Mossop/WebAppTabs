@@ -17,7 +17,9 @@ const TESTAPPS = [{
 
 Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
-function test() {
+var gTab, gListener, gEventListener;
+
+function init_test() {
   ConfigManager.webappList = TESTAPPS;
   ConfigManager.updatePrefs();
 
@@ -25,36 +27,39 @@ function test() {
   ok(app1, "Should have the first webapp");
 
   waitForNewTab(function(aTab) {
-    is(aTab.browser.currentURI.spec, "http://localhost:8080/webapp1/",
+    gTab = aTab;
+    is(gTab.browser.currentURI.spec, "http://localhost:8080/webapp1/",
        "Should have loaded the right url");
-    let links = ["test3-1", "test3-2", "test3-3", "test3-4", "test3-5"];
 
-    let listener = new TabListener();
-    let eventListener = function() {
+    gListener = new TabListener();
+    gEventListener = function() {
       unexpected("Should not have seen the webapp tab reload");
     }
-    aTab.browser.addEventListener("load", eventListener, true);
+    gTab.browser.addEventListener("load", gEventListener, true);
 
-    function clickNextLink() {
-      if (links.length == 0) {
-        listener.destroy();
-        aTab.browser.removeEventListener("load", eventListener, true);
-        closeTab(aTab);
-        return;
-      }
-
-      let id = links.shift();
-      info("Testing link " + id);
-      let link = aTab.browser.contentDocument.getElementById(id);
-      ok(link, "Link should exist");
-
-      clickElement(link);
-
-      executeSoon(clickNextLink);
-    }
-
-    clickNextLink();
+    run_next_test();
   });
 
   clickElement(app1);
 }
+
+function finish_test() {
+  gListener.destroy();
+  gTab.browser.removeEventListener("load", gEventListener, true);
+  closeTab(gTab);
+}
+
+function click_link(aLink) {
+  info("Testing link " + aLink);
+  let link = gTab.browser.contentDocument.getElementById(aLink);
+  ok(link, "Link should exist");
+
+  clickElement(link);
+
+  executeSoon(run_next_test);
+}
+
+let links = ["test3-1", "test3-2", "test3-3", "test3-4", "test3-5"];
+links.forEach(function(aLink) {
+  add_test(click_link.bind(null, aLink));
+});

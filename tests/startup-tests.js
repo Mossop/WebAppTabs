@@ -37,7 +37,7 @@ function testBasicState() {
     webapp = webapp.nextSibling;
   }
 
-  testWebappClick();
+  run_next_test();
 }
 
 function testWebappClick() {
@@ -46,7 +46,7 @@ function testWebappClick() {
        "Should have loaded the right URL");
 
     closeTab(aTab, function() {
-      testShutdown();
+      run_next_test();
     });
   });
 
@@ -62,5 +62,6 @@ function testShutdown() {
     ok(!hbox, "Overlay element removed");
 
     aAddon.userDisabled = false;
+    run_next_test();
   });
 }

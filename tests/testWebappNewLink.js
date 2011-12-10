@@ -17,7 +17,9 @@ const TESTAPPS = [{
 
 Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
-function test() {
+var gTab;
+
+function init_test() {
   ConfigManager.webappList = TESTAPPS;
   ConfigManager.updatePrefs();
 
@@ -25,32 +27,35 @@ function test() {
   ok(app1, "Should have the first webapp");
 
   waitForNewTab(function(aTab) {
-    is(aTab.browser.currentURI.spec, "http://localhost:8080/webapp1/",
+    gTab = aTab;
+    is(gTab.browser.currentURI.spec, "http://localhost:8080/webapp1/",
        "Should have loaded the right url");
-    let links = ["test2-1", "test2-2", "test2-3", "test2-4", "test2-5"];
 
-    function clickNextLink() {
-      if (links.length == 0) {
-        closeTab(aTab);
-        return;
-      }
-
-      waitForNewTab(function(aNewTab) {
-        is(aNewTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
-           "Should have loaded the right url");
-        closeTab(aNewTab, clickNextLink);
-      });
-
-      let id = links.shift();
-      info("Testing link " + id);
-      let link = aTab.browser.contentDocument.getElementById(id);
-      ok(link, "Link should exist");
-
-      clickElement(link);
-    }
-
-    clickNextLink();
+    run_next_test();
   });
 
   clickElement(app1);
 }
+
+function finish_test() {
+  closeTab(gTab);
+}
+
+function click_link(aLink) {
+  waitForNewTab(function(aNewTab) {
+    is(aNewTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
+       "Should have loaded the right url");
+    closeTab(aNewTab, run_next_test);
+  });
+
+  info("Testing link " + aLink);
+  let link = gTab.browser.contentDocument.getElementById(aLink);
+  ok(link, "Link should exist");
+
+  clickElement(link);
+}
+
+let links = ["test2-1", "test2-2", "test2-3", "test2-4", "test2-5"];
+links.forEach(function(aLink) {
+  add_test(click_link.bind(null, aLink));
+});
