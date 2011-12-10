@@ -23,6 +23,9 @@ new tabs from being opened.
 1.  Get the target window for the link from docshell.
 2.  If the target window is an inner frame then leave the target the same, inner
     frames can load whatever they like.
+3.  If the link is javascript protocol then just force the target window to
+    evaluate it. Content policy handlers will stop the normal load from
+    happening.
 3.  If the target window isn't a webapp then leave the target the same to avoid
     breaking other extensions.
 4.  If the new link is the same webapp as the source window and if the link isn't
