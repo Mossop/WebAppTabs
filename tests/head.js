@@ -15,7 +15,14 @@ function getAddon(aCallback) {
 function enableAddon(aCallback) {
   getAddon(function(aAddon) {
     aAddon.userDisabled = false;
-    safeCall(aCallback);
+    executeSoon(aCallback);
+  });
+}
+
+function disableAddon(aCallback) {
+  getAddon(function(aAddon) {
+    aAddon.userDisabled = true;
+    executeSoon(aCallback);
   });
 }
 
