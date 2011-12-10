@@ -17,7 +17,9 @@ const TESTAPPS = [{
 
 Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
-function test() {
+var gTab;
+
+function init_test() {
   ConfigManager.webappList = TESTAPPS;
   ConfigManager.updatePrefs();
 
@@ -25,27 +27,17 @@ function test() {
   ok(app, "Should have the webapp");
 
   waitForNewTab(function(aTab) {
-    is(aTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
+    gTab = aTab;
+    is(gTab.browser.currentURI.spec, "http://localhost:8080/webapp2/",
        "Should have loaded the right url");
 
-    let link = aTab.browser.contentDocument.getElementById("sublink");
+    let link = gTab.browser.contentDocument.getElementById("sublink");
 
-    waitForTabLoad(aTab, function() {
-      is(aTab.browser.currentURI.spec, "http://localhost:8080/webapp2/subpage.html",
+    waitForTabLoad(gTab, function() {
+      is(gTab.browser.currentURI.spec, "http://localhost:8080/webapp2/subpage.html",
          "Should have loaded the right url");
 
-      let link = aTab.browser.contentDocument.getElementById("javascript");
-
-      clickElement(link);
-
-      // LAME
-      waitForExplicitFinish();
-      setTimeout(function() {
-        is(aTab.browser.contentDocument.getElementById("javascript-result").textContent, "SUCCESS", "Should have run the javascript");
-
-        closeTab(aTab);
-        finish();
-      }, 100);
+      run_next_test();
     });
 
     clickElement(link);
@@ -53,3 +45,19 @@ function test() {
 
   clickElement(app);
 }
+
+function finish_test() {
+  closeTab(gTab);
+}
+
+add_test(function test_click_link() {
+  let link = gTab.browser.contentDocument.getElementById("javascript");
+
+  clickElement(link);
+
+  // LAME
+  wait(100, function() {
+    is(gTab.browser.contentDocument.getElementById("javascript-result").textContent,
+       "SUCCESS", "Should have run the javascript");
+  });
+});

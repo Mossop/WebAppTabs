@@ -122,6 +122,14 @@ function executeSoon(aCallback) {
   }, Ci.nsIEventTarget.DISPATCH_NORMAL);
 }
 
+function wait(aTime, aCallback) {
+  waitForExplicitFinish();
+  setTimeout(function() {
+    safeCall(aCallback);
+    finish();
+  }, aTime);
+}
+
 function waitForFocus(aWindow, aCallback, aExpectBlankPage, aWaitVars) {
   waitForExplicitFinish();
 
