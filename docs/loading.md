@@ -42,7 +42,7 @@ openURI
 -------
 
 When a page load requires a new tab/window, either because of a call to
-window.open or because of a _blank link target then `nsIBrowserDOMWindow.openURL`
+window.open or because of a _blank link target then `nsIBrowserDOMWindow.openURI`
 is called to get a new window. Again there isn't a way to cancel the load from
 here and also if an existing window is returned its content will be cleared
 ready for the new page. Also the new URL isn't passed to this function but the
