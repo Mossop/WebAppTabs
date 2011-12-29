@@ -82,15 +82,26 @@ const webtabs = {
 
     this.oldBrowserDOMWindow = window.browserDOMWindow;
     window.browserDOMWindow = this;
+
+    // Initialise all tabs that are webapps
+    let tabmail = document.getElementById("tabmail");
+    tabmail.tabInfo.forEach(this.onTabOpened.bind(this));
+
+    tabmail.registerTabMonitor(this);
   },
 
   onUnload: function() {
+    let tabmail = document.getElementById("tabmail");
+    tabmail.unregisterTabMonitor(this);
+
+    tabmail.tabInfo.forEach(this.onTabClosing.bind(this));
+
     var browsers = document.querySelectorAll("browser.webapptab-browser");
     if (browsers.length > 0)
       WARN("Found unexpected browsers left in the document");
 
     for (let i = 0; i < browsers.length; i++)
-    browsers[i].parentNode.removeChild(browsers[i]);
+      browsers[i].parentNode.removeChild(browsers[i]);
 
     window.browserDOMWidnow = this.oldBrowserDOMWindow;
 
@@ -113,6 +124,14 @@ const webtabs = {
   // Called without a proper this
   configChanged: function() {
     webtabs.updateWebAppButtons();
+  },
+
+  initWebAppTab: function(aTabInfo) {
+    aTabInfo.browser.setAttribute("tooltip", "aHTMLTooltip");
+  },
+
+  destroyWebAppTab: function(aTabInfo) {
+    aTabInfo.browser.removeAttribute("tooltip");
   },
 
   updateWebAppButtons: function() {
@@ -207,40 +226,6 @@ const webtabs = {
       contentPage: aURL ? aURL : aDesc.href,
       clickHandler: "return true;"
     });
-
-    info.browser.setAttribute("tooltip", "aHTMLTooltip");
-
-    // Only get new favicons when loading the normal webapp url
-    if (aURL)
-      return;
-
-    let listener = {
-      onStateChange: function(aWebProgress, aRequest, aState, aStatus) {
-        if ((aState & Ci.nsIWebProgressListener.STATE_IS_REQUEST) &&
-            (aState & Ci.nsIWebProgressListener.STATE_STOP)) {
-          let icon = info.tabNode.getAttribute("image");
-          if (!icon)
-            return;
-
-          info.browser.removeProgressListener(listener);
-
-          aDesc.icon = icon;
-          ConfigManager.persistPrefs();
-
-          let button = document.getElementById(aDesc.id);
-          button.setAttribute("image", aDesc.icon);
-        }
-      },
-
-      onLocationChange: function() { },
-      onProgressChange: function() { },
-      onSecurityChange: function() { },
-      onStatusChange: function() { },
-      QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
-                                             Ci.nsISupportsWeakReference])
-    };
-
-    info.browser.addProgressListener(listener);
   },
 
   onPopupShowing: function(aEvent) {
@@ -470,6 +455,89 @@ const webtabs = {
       ERROR("Exception during " + aEvent.type + " event", e);
     }
   },
+
+  // Tab monitor implementation
+  monitorName: "WebAppTabListener",
+
+  onTabTitleChanged: function(aTabInfo) {
+  },
+
+  onTabSwitched: function(aTabInfo, aOldTabInfo) {
+  },
+
+  onTabOpened: function(aTabInfo, aIsFirstTab, aWasCurrentTab) {
+    if (!aTabInfo.browser)
+      return;
+
+    LOG(aTabInfo.toSource());
+    if (aTabInfo.pageLoading) {
+      let listener = {
+        onLocationChange: function(aWebProgress, aRequest, aLocation) {
+          let webapp = ConfigManager.getWebAppForURL(aLocation);
+
+          // Ignore tabs that aren't webapps
+          if (!webapp) {
+            aTabInfo.browser.removeProgressListener(this);
+            return;
+          }
+
+          webtabs.initWebAppTab(aTabInfo);
+        },
+
+        onStateChange: function(aWebProgress, aRequest, aState, aStatus) {
+          if (!(aState & Ci.nsIWebProgressListener.STATE_STOP))
+            return;
+
+          if (aState & Ci.nsIWebProgressListener.STATE_IS_NETWORK)
+            aTabInfo.browser.removeProgressListener(listener);
+
+          if (aState & Ci.nsIWebProgressListener.STATE_IS_REQUEST) {
+            let icon = aTabInfo.tabNode.getAttribute("image");
+            if (!icon)
+              return;
+
+            let webapp = ConfigManager.getWebAppForURL(aTabInfo.browser.contentDocument.documentURIObject);
+            webapp.icon = icon;
+            ConfigManager.persistPrefs();
+
+            let button = document.getElementById(webapp.id);
+            button.setAttribute("image", webapp.icon);
+          }
+        },
+
+        onProgressChange: function() { },
+        onSecurityChange: function() { },
+        onStatusChange: function() { },
+        QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
+                                               Ci.nsISupportsWeakReference])
+      };
+
+      aTabInfo.browser.addProgressListener(listener);
+    }
+    else {
+      if (!ConfigManager.getWebAppForURL(aTabInfo.browser.contentDocument.documentURIObject))
+        return;
+
+      this.initWebAppTab(aTabInfo);
+    }
+  },
+
+  onTabClosing: function(aTabInfo) {
+    if (!aTabInfo.browser)
+      return;
+
+    if (!ConfigManager.getWebAppForURL(aTabInfo.browser.contentDocument.documentURIObject))
+      return;
+
+    this.destroyWebAppTab(aTabInfo);
+  },
+
+  onTabPersist: function(aTabInfo) {
+    return null;
+  },
+
+  onTabRestored: function(aTabInfo, aState, aIsFirstTab) {
+  }
 };
 
 var OverlayListener = {

@@ -19,6 +19,9 @@ Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 function init_test() {
   ConfigManager.webappList = TESTAPPS;
   ConfigManager.updatePrefs();
+  ConfigManager.persistPrefs();
+
+  run_next_test();
 }
 
 add_test(function test_created_tab() {
@@ -33,7 +36,7 @@ add_test(function test_created_tab() {
     waitForEvent(tooltip, "popupshown", function() {
       is(tooltip.label, "This title has a tooltip", "Tooltip label should be correct");
 
-      closeTab(aTab);
+      run_next_test();
     });
 
     let title = aTab.browser.contentDocument.getElementById("title");
