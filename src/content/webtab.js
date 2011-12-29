@@ -103,7 +103,7 @@ const webtabs = {
     for (let i = 0; i < browsers.length; i++)
       browsers[i].parentNode.removeChild(browsers[i]);
 
-    window.browserDOMWidnow = this.oldBrowserDOMWindow;
+    window.browserDOMWindow = this.oldBrowserDOMWindow;
 
     MsgStatusFeedback.onBeforeLinkTraversal = this.oldOnBeforeLinkTraversal;
 
