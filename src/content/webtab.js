@@ -469,7 +469,19 @@ const webtabs = {
     if (!aTabInfo.browser)
       return;
 
-    LOG(aTabInfo.toSource());
+    // In some versions of Thunderbird we end up with a browser that has history
+    // disabled, this code forcibly enables it
+    if (aTabInfo.browser.hasAttribute("disablehistory")) {
+      Services.obs.addObserver(aTabInfo.browser, "browser:purge-session-history", false);
+      // wire up session history
+      aTabInfo.browser.webNavigation.sessionHistory = Cc["@mozilla.org/browser/shistory;1"].
+                                                      createInstance(Ci.nsISHistory);
+      // enable global history
+      if (aTabInfo.browser.docShell)
+        aTabInfo.browser.docShell.QueryInterface(Ci.nsIDocShellHistory).useGlobalHistory = true;
+      aTabInfo.browser.removeAttribute("disablehistory");
+    }
+
     if (aTabInfo.pageLoading) {
       let listener = {
         onLocationChange: function(aWebProgress, aRequest, aLocation) {
