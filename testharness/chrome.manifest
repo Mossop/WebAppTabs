@@ -1,4 +1,5 @@
 component {ff8e5752-07f1-40c9-9491-064d23f2edcd} testharness.js
 contract @fractalbrew.com/tests/webapp-test-harness;1 {ff8e5752-07f1-40c9-9491-064d23f2edcd}
+contract @mozilla.org/uriloader/external-protocol-service;1 {ff8e5752-07f1-40c9-9491-064d23f2edcd}
 category profile-after-change TestHarness @fractalbrew.com/tests/webapp-test-harness;1
 resource testharness .

@@ -54,9 +54,11 @@ function click_link(aLink) {
   let link = gTab.browser.contentDocument.getElementById(aLink);
   ok(link, "Link should exist");
 
+  waitForExternalLoad(function(aURL) {
+    is(aURL.spec, "http://www.google.com/", "Should have loaded the link externally");
+    run_next_test();
+  });
   clickElement(link);
-
-  executeSoon(run_next_test);
 }
 
 let links = ["test3-1", "test3-2", "test3-3", "test3-4", "test3-5"];

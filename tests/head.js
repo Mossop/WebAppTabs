@@ -4,6 +4,18 @@
 
 Components.utils.import("resource://gre/modules/AddonManager.jsm");
 
+var gExternalLoadCallback;
+// Called by the test harness when the external protocol service is asked to
+// open a URL. Should return true to cancel the load
+function externalURLOpened(aURL, aWindowContext) {
+  if (gExternalLoadCallback)
+    gExternalLoadCallback(aURL, aWindowContext);
+  else
+    unexpected("Wasn't expecting an external load of " + aURL.spec);
+
+  return true;
+}
+
 function getAddon(aCallback) {
   waitForExplicitFinish();
   AddonManager.getAddonByID("webapptabs@fractalbrew.com", function(aAddon) {
@@ -99,4 +111,13 @@ function waitForEvent(aElement, aEvent, aCallback, aCapture) {
     safeCall(aCallback.bind(null, aEv));
     finish();
   }, aCapture);
+}
+
+function waitForExternalLoad(aCallback) {
+  waitForExplicitFinish();
+  gExternalLoadCallback = function(aURL, aWindowContext) {
+    gExternalLoadCallback = null;
+    aCallback(aURL, aWindowContext);
+    finish();
+  };
 }

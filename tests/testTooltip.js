@@ -36,6 +36,8 @@ add_test(function test_created_tab() {
     waitForEvent(tooltip, "popupshown", function() {
       is(tooltip.label, "This title has a tooltip", "Tooltip label should be correct");
 
+      // Remove this when re-enabling testTooltipAfterRestart.js
+      closeTab(aTab);
       run_next_test();
     });
 

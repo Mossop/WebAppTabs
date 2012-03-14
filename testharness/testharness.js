@@ -85,11 +85,21 @@ function exceptionLine(aException) {
 }
 
 function TestHarness() {
+  this.protocolService = Components.classesByID["{a7f800e0-4306-11d4-98d0-001083010e9b}"].
+                         getService(Ci.nsIExternalProtocolService);
+
+  ["externalProtocolHandlerExists", "isExposedProtocol", "getProtocolHandlerInfo",
+   "getProtocolHandlerInfoFromOS", "setProtocolHandlerDefaults",
+   "getApplicationDescription"].forEach(function(aFunc) {
+     this[aFunc] = this.protocolService[aFunc].bind(this.protocolService);
+   }, this);
 }
 
 TestHarness.prototype = {
   window: null,
   commandList: null,
+  protocolService: null,
+  externalURLOpened: null,
 
   log: function(aStr) {
     dump("!!!INFO: " + aStr + "\n");
@@ -156,6 +166,7 @@ TestHarness.prototype = {
 
       let self = this;
       let sandbox = this.createTestSandbox(url, function() {
+        this.externalURLOpened = null;
         self.log("TEST-END " + aTestPath);
         self.runNextCommand();
       });
@@ -170,6 +181,9 @@ TestHarness.prototype = {
       }
 
       sandbox.importScript(url.spec);
+
+      if ("externalURLOpened" in sandbox)
+        this.externalURLOpened = sandbox.externalURLOpened;
 
       try {
         sandbox.waitForExplicitFinish();
@@ -285,8 +299,21 @@ TestHarness.prototype = {
     }
   },
 
+  loadUrl: function(aURL) {
+    this.loadURI(aURL);
+  },
+
+  loadURI: function(aURI, aWindowContext) {
+    // Always pass javascript uris through to the real protocol service
+    if (aURI.scheme != "javascript" && this.externalURLOpened &&
+        this.externalURLOpened(aURI, aWindowContext))
+      return;
+
+    this.protocolService.loadURI(aURI, aWindowContext);
+  },
+
   classID: Components.ID("{ff8e5752-07f1-40c9-9491-064d23f2edcd}"),
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver, Ci.nsIExternalProtocolService])
 };
 
 var NSGetFactory = XPCOMUtils.generateNSGetFactory([TestHarness]);
