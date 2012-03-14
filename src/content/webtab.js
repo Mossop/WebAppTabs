@@ -380,14 +380,14 @@ const webtabs = {
   // nsIBrowserDOMWindow implementation
   openURI: function(aURI, aOpener, aWhere, aContext) {
     function logResult(aReason) {
-      LOG("openURI from " + (aOpener ? aOpener.document.documentURIObject.spec : null) +
+      LOG("openURI from " + (aOpener ? aOpener.top.document.documentURIObject.spec : null) +
           " - " + aReason);
     }
 
     // We don't know what the target URL is at this point. If the opener is a
     // webapp then open the link in a new browser, wait for it to be taken over
     // by the content policy
-    let desc = ConfigManager.getWebAppForURL(aOpener.document.documentURIObject);
+    let desc = ConfigManager.getWebAppForURL(aOpener.top.document.documentURIObject);
     if (desc) {
       let browser = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
                                              "browser");
