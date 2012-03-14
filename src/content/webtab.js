@@ -135,37 +135,12 @@ const webtabs = {
   },
 
   updateWebAppButtons: function() {
-    let before = this.buttonContainer.firstChild;
+    while (this.buttonContainer.lastChild)
+      this.buttonContainer.removeChild(this.buttonContainer.lastChild);
 
-    // Loop through all webapps, for each either move it to the current position
-    // or create it
     ConfigManager.webappList.forEach(function(aDesc) {
-      if (before) {
-        // Common case is the button will be the next in the list
-        if (aDesc.id == before.id) {
-          before = before.nextSibling;
-          return;
-        }
-
-        let found = before.nextSibling;
-        while (found && found.id != aDesc.id)
-          found = found.nextSibling;
-        if (found) {
-          found.parentNode.insertBefore(found, before);
-          return;
-        }
-      }
-
-      // Webapp doesn't exist, create it and put it in the right place
-      let button = this.createWebAppButton(aDesc, before);
+      this.createWebAppButton(aDesc, null);
     }, this);
-
-    // Remove any remaining buttons
-    while (before) {
-      let next = before.nextSibling;
-      this.removeWebAppButton(before.desc);
-      before = next;
-    }
   },
 
   createWebAppButton: function(aDesc, aBefore) {
