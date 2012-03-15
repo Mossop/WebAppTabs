@@ -73,9 +73,9 @@ const webtabs = {
     document.getElementById("mailContext").addEventListener("popupshowing", this, false);
 
     this.backButton = document.getElementById("webapptabs-context-back")
-    this.backButton.addEventListener("command", this, false);
+    this.backButton.addEventListener("command", this.onBackClick.bind(this), false);
     this.forwardButton = document.getElementById("webapptabs-context-forward")
-    this.forwardButton.addEventListener("command", this, false);
+    this.forwardButton.addEventListener("command", this.onForwardClick.bind(this), false);
 
     this.oldOnBeforeLinkTraversal = MsgStatusFeedback.onBeforeLinkTraversal;
     MsgStatusFeedback.onBeforeLinkTraversal = this.onBeforeLinkTraversal.bind(this);
@@ -107,8 +107,6 @@ const webtabs = {
 
     MsgStatusFeedback.onBeforeLinkTraversal = this.oldOnBeforeLinkTraversal;
 
-    this.backButton.removeEventListener("command", this, false);
-    this.forwardButton.removeEventListener("command", this, false);
     document.getElementById("mailContext").removeEventListener("popupshowing", this, false);
 
     let container = document.getElementById("tabpanelcontainer");
@@ -417,12 +415,6 @@ const webtabs = {
         break;
       case "click":
         this.onContentClick(aEvent);
-        break;
-      case "command":
-        if (aEvent.target == this.backButton)
-          this.onBackClick(aEvent);
-        else
-          this.onForwardClick(aEvent);
         break;
       }
     }

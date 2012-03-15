@@ -91,8 +91,8 @@ function waitForNewTab(aCallback) {
 
 function waitForTabLoad(aTab, aCallback) {
   waitForExplicitFinish();
-  aTab.browser.addEventListener("load", function() {
-    aTab.browser.removeEventListener("load", arguments.callee, true);
+  aTab.browser.addEventListener("pageshow", function() {
+    aTab.browser.removeEventListener("pageshow", arguments.callee, true);
     waitForFocus(aTab.browser.contentWindow, aCallback.bind(null, aTab));
     finish();
   }, true);
@@ -120,4 +120,33 @@ function waitForExternalLoad(aCallback) {
     aCallback(aURL, aWindowContext);
     finish();
   };
+}
+
+function openContextMenu(aTarget, aCallback) {
+  waitForExplicitFinish();
+  let context = document.getElementById("mailContext");
+  context.addEventListener("popupshown", function() {
+    context.removeEventListener("popupshown", arguments.callee, false);
+    aCallback();
+    finish();
+  }, false);
+
+  var rect = aTarget.getBoundingClientRect();
+  var left = rect.left + rect.width / 2;
+  var top = rect.top + rect.height / 2;
+
+  var eventDetails = { type: "contextmenu", button: 2 };
+  synthesizeMouse(aTarget, left, top, eventDetails, aTarget.ownerDocument.defaultView);
+}
+
+function closeContextMenu(aCallback) {
+  waitForExplicitFinish();
+  let context = document.getElementById("mailContext");
+  context.addEventListener("popuphidden", function() {
+    context.removeEventListener("popuphidden", arguments.callee, false);
+    aCallback();
+    finish();
+  }, false);
+
+  context.hidePopup();
 }

@@ -59,5 +59,7 @@ add_test(function test_click_link() {
   wait(100, function() {
     is(gTab.browser.contentDocument.getElementById("javascript-result").textContent,
        "SUCCESS", "Should have run the javascript");
+
+    run_next_test();
   });
 });
