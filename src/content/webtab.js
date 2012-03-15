@@ -27,6 +27,11 @@ const webtabs = {
 
   onLoad: function() {
     this.buttonContainer = document.getElementById("webapptabs-buttons");
+    this.buttonContainer.addEventListener("dragstart", this.onDragStart.bind(this), false);
+    this.buttonContainer.addEventListener("dragenter", this.onDragEnter.bind(this), false);
+    this.buttonContainer.addEventListener("dragover", this.onDragOver.bind(this), false);
+    this.buttonContainer.addEventListener("dragend", this.onDragEnd.bind(this), false);
+    this.buttonContainer.addEventListener("drop", this.onDrop.bind(this), false);
 
     ConfigManager.webappList.forEach(function(aDesc) {
       this.createWebAppButton(aDesc);
@@ -273,6 +278,84 @@ const webtabs = {
       return;
 
     info.browser.goForward();
+  },
+
+  originalDragPosition: null,
+
+  onDragStart: function(aEvent) {
+    let item = aEvent.target;
+    if (item.localName != "toolbarbutton")
+      return;
+    let desc = item.desc;
+
+    let dt = aEvent.dataTransfer;
+    dt.setData("application/x-webapptab", desc.id);
+    dt.addElement(item);
+
+    this.originalDragPosition = item.nextSibling;
+
+    let image = document.getAnonymousElementByAttribute(item, "class", "toolbarbutton-icon");
+    dt.setDragImage(image, 0, 0);
+
+    dt.effectAllowed = "move";
+  },
+
+  onDragEnter: function(aEvent) {
+    this.onDragOver(aEvent);
+  },
+
+  onDragOver: function(aEvent) {
+    let dt = aEvent.dataTransfer;
+
+    // Don't allow drops from anywhere else
+    if (!dt.types.contains("application/x-webapptab"))
+      return;
+
+    let sourceItem = dt.mozSourceNode;
+    let targetItem = aEvent.target;
+
+    aEvent.preventDefault();
+
+    // Dropping an item onto itself does nothing
+    if (sourceItem == targetItem)
+      return;
+
+    var before = true;
+    var node = this.buttonContainer.firstChild;
+    while (node && node != targetItem) {
+      if (node == sourceItem) {
+        before = false;
+        break;
+      }
+      node = node.nextSibling;
+    }
+
+    this.buttonContainer.insertBefore(sourceItem, before ? targetItem : targetItem.nextSibling);
+  },
+
+  onDragEnd: function(aEvent) {
+    let dt = aEvent.dataTransfer;
+    let sourceItem = dt.mozSourceNode;
+
+    // Move the button back if the drop was cancelled
+    if (dt.dropEffect == "none")
+      this.buttonContainer.insertBefore(sourceItem, this.originalDragPosition);
+  },
+
+  onDrop: function(aEvent) {
+    let dt = aEvent.dataTransfer;
+    let sourceItem = dt.mozSourceNode;
+
+    let sourcePos = ConfigManager.webappList.indexOf(sourceItem.desc);
+    ConfigManager.webappList.splice(sourcePos, 1);
+
+    let newPos = ConfigManager.webappList.length;
+    if (sourceItem.nextSibling)
+      newPos = ConfigManager.webappList.indexOf(sourceItem.nextSibling.desc);
+
+    ConfigManager.webappList.splice(newPos, 0, sourceItem.desc);
+    ConfigManager.updatePrefs();
+    ConfigManager.persistPrefs();
   },
 
   // nsIXULBrowserWindow bits
