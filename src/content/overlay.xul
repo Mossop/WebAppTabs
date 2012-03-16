@@ -16,7 +16,33 @@
               insertbefore="mailContext-reload"/>
   </menupopup>
 
+  <popupset id="mainPopupSet">
+    <panel id="webapptabs-webapp-panel" type="arrow" orient="vertical">
+     <grid flex="1">
+        <columns>
+          <column/>
+          <column flex="1" align="stretch"/>
+       </columns>
+       <rows>
+         <row>
+           <label value="&name.label;"/>
+           <textbox id="webapptabs-name-textbox" flex="1" placeholder="&name.placeholder;"/>
+         </row>
+         <row>
+           <label value="&href.label;"/>
+           <textbox id="webapptabs-href-textbox" flex="1" placeholder="&href.placeholder;"/>
+         </row>
+       </rows>
+     </grid>
+      <hbox pack="end">
+        <button id="webapptabs-add-button" label="&add.label;"/>
+        <button id="webapptabs-remove-button" label="&remove.label;"/>
+      </hbox>
+    </panel>
+  </popupset>
+
   <hbox id="tabmail-buttons">
     <hbox id="webapptabs-buttons"/>
+    <toolbarbutton id="webapptabs-create-button" tooltiptext="&create.label;"/>
   </hbox>
 </overlay>

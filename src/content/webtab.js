@@ -33,6 +33,29 @@ const webtabs = {
     this.buttonContainer.addEventListener("dragend", this.onDragEnd.bind(this), false);
     this.buttonContainer.addEventListener("drop", this.onDrop.bind(this), false);
 
+    document.getElementById("webapptabs-create-button").addEventListener("command", function(aEvent) {
+      webtabs.editWebApp(aEvent.target, null);
+    }, false);
+
+    let panel = document.getElementById("webapptabs-webapp-panel");
+    panel.addEventListener("popuphidden", function() {
+      if (!panel.desc)
+        return;
+
+      webtabs.updateWebApp(panel.desc);
+    });
+
+    document.getElementById("webapptabs-add-button").addEventListener("command", function() {
+      webtabs.addWebApp();
+      panel.hidePopup();
+    });
+
+    document.getElementById("webapptabs-remove-button").addEventListener("command", function() {
+      webtabs.removeWebApp(panel.desc);
+      panel.desc = null;
+      panel.hidePopup();
+    });
+
     ConfigManager.webappList.forEach(function(aDesc) {
       this.createWebAppButton(aDesc);
     }, this);
@@ -130,6 +153,13 @@ const webtabs = {
         ERROR("Failed to open webapp", e);
       }
     }, false);
+
+    button.addEventListener("click", function(aEvent) {
+      if (aEvent.button != 2)
+        return;
+
+      webtabs.editWebApp(button, aDesc);
+    }, false);
   },
 
   removeWebAppButton: function(aDesc) {
@@ -171,6 +201,53 @@ const webtabs = {
       contentPage: aURL ? aURL : aDesc.href,
       clickHandler: "return true;"
     });
+  },
+
+  editWebApp: function(aElement, aDesc) {
+    document.getElementById("webapptabs-add-button").hidden = !!aDesc;
+    document.getElementById("webapptabs-remove-button").hidden = !aDesc;
+
+    document.getElementById("webapptabs-name-textbox").value = aDesc ? aDesc.name : null;
+    document.getElementById("webapptabs-href-textbox").value = aDesc ? aDesc.href : null;
+
+    let rect = aElement.getBoundingClientRect();
+    let panel = document.getElementById("webapptabs-webapp-panel");
+    panel.openPopup(aElement, "after_end", -rect.width / 2, 0, false, false, null);
+    panel.desc = aDesc;
+  },
+
+  updateWebApp: function(aDesc) {
+    aDesc.name = document.getElementById("webapptabs-name-textbox").value;
+    let href = document.getElementById("webapptabs-href-textbox").value;
+    let URIFixup = Cc["@mozilla.org/docshell/urifixup;1"].
+                   getService(Ci.nsIURIFixup);
+    aDesc.href = URIFixup.createFixupURI(href, Ci.nsIURIFixup.FIXUP_FLAG_NONE).spec;
+
+    ConfigManager.updatePrefs();
+    ConfigManager.persistPrefs();
+  },
+
+  addWebApp: function() {
+    var desc = {};
+
+    desc.name = document.getElementById("webapptabs-name-textbox").value;
+    let href = document.getElementById("webapptabs-href-textbox").value;
+    let URIFixup = Cc["@mozilla.org/docshell/urifixup;1"].
+                   getService(Ci.nsIURIFixup);
+    desc.href = URIFixup.createFixupURI(href, Ci.nsIURIFixup.FIXUP_FLAG_NONE).spec;
+    desc.icon = "http://getfavicon.appspot.com/" + desc.href
+
+    ConfigManager.webappList.push(desc);
+
+    ConfigManager.updatePrefs();
+    ConfigManager.persistPrefs();
+  },
+
+  removeWebApp: function(aDesc) {
+    let pos = ConfigManager.webappList.indexOf(aDesc);
+    ConfigManager.webappList.splice(pos, 1);
+    ConfigManager.updatePrefs();
+    ConfigManager.persistPrefs();
   },
 
   onPopupShowing: function(aEvent) {

@@ -4,3 +4,12 @@
 
 <!ENTITY back.label       "Back">
 <!ENTITY forward.label    "Forward">
+
+<!ENTITY name.label       "Name:">
+<!ENTITY name.placeholder "Enter the website's name…">
+<!ENTITY href.label       "Address:">
+<!ENTITY href.placeholder "Enter the website's address…">
+<!ENTITY add.label        "Add">
+<!ENTITY remove.label     "Remove">
+
+<!ENTITY create.label     "Create a new webapp…">
