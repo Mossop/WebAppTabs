@@ -7,14 +7,10 @@
   height: 16px;
 }
 
-.webtab > label {
+#webapptabs-controls label {
   display: none;
 }
 
 #webapptabs-create-button {
   list-style-image: url(chrome://webapptabs/skin/chalkwork/add.png);
-}
-
-#webapptabs-create-button > label {
-  display: none;
 }

@@ -42,7 +42,9 @@
   </popupset>
 
   <hbox id="tabmail-buttons">
-    <hbox id="webapptabs-buttons"/>
-    <toolbarbutton id="webapptabs-create-button" tooltiptext="&create.label;"/>
+    <hbox id="webapptabs-controls">
+      <hbox id="webapptabs-buttons"/>
+      <toolbarbutton id="webapptabs-create-button" tooltiptext="&create.label;"/>
+    </hbox>
   </hbox>
 </overlay>
