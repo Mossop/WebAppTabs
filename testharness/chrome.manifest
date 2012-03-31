@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
+
 component {ff8e5752-07f1-40c9-9491-064d23f2edcd} testharness.js
 contract @fractalbrew.com/tests/webapp-test-harness;1 {ff8e5752-07f1-40c9-9491-064d23f2edcd}
 contract @mozilla.org/uriloader/external-protocol-service;1 {ff8e5752-07f1-40c9-9491-064d23f2edcd}
