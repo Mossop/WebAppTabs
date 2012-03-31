@@ -141,6 +141,9 @@ function startup(aParams, aReason) {
   OverlayManager.addCategory("content-policy", "webapptabs-content-policy",
                              "@fractalbrew.com/webapptabs/content-policy;1");
 
+  // Allow javascript: protocol links to work
+  OverlayManager.addPreference("network.protocol-handler.expose.javascript", true);
+
   OverlayManager.addOverlays(OVERLAYS);
 
   // Force changes to the content policy list to take effect

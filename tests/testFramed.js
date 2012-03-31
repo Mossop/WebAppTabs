@@ -83,7 +83,7 @@ links.forEach(function(aLink) {
   add_test(click_internal_link.bind(null, aLink));
 });
 
-let links = ["test3-2", "test3-3", "test3-4"];
+let links = ["test3-2", "test3-3", "test3-4", "test3-5"];
 links.forEach(function(aLink) {
   add_test(click_external_link.bind(null, aLink));
 });

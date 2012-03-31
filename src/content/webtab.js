@@ -342,12 +342,6 @@ const webtabs = {
       return newTarget;
     }
 
-    if (aLinkURI.scheme == "javascript") {
-      logResult("", "Javascript load");
-      targetWin.location = aLinkURI.spec;
-      return "";
-    }
-
     let targetDesc = ConfigManager.getWebAppForURL(aLinkURI);
 
     // If this is a load of the same webapp then allow it to continue
