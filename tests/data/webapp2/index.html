@@ -1,6 +1,12 @@
 <html>
 <body>
+<script type="text/javascript">
+function getPage() {
+  return "<html><body><div id='result'>PASS</div></body></html>";
+}
+</script>
 <h1 id="title" title="This title has a tooltip">WebApp2</h1>
 <p><a id="sublink" href="subpage.html">Sub-page</a></p>
+<iframe id="frame" width="90%" height="500" src="javascript:parent.getPage()"></iframe>
 </body>
 </html>

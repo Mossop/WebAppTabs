@@ -120,8 +120,11 @@ const OverlayManagerInternal = {
 
       let cm = Cc["@mozilla.org/categorymanager;1"].
                getService(Ci.nsICategoryManager);
-      this.categories.forEach(function([aCategory, aEntry]) {
-        cm.deleteCategoryEntry(aCategory, aEntry, false);
+      this.categories.forEach(function([aCategory, aEntry, aOldValue]) {
+        if (aOldValue)
+          cm.addCategoryEntry(aCategory, aEntry, aOldValue, false, true);
+        else
+          cm.deleteCategoryEntry(aCategory, aEntry, false);
       });
 
       this.components.forEach(function(aCid) {
@@ -429,8 +432,13 @@ const OverlayManagerInternal = {
   addCategory: function(aCategory, aEntry, aValue) {
     let cm = Cc["@mozilla.org/categorymanager;1"].
              getService(Ci.nsICategoryManager);
+    let oldValue = null;
+    try {
+      oldValue = cm.getCategoryEntry(aCategory, aEntry);
+    }
+    catch (e) { }
     cm.addCategoryEntry(aCategory, aEntry, aValue, false, true);
-    this.categories.push([aCategory, aEntry]);
+    this.categories.push([aCategory, aEntry, oldValue]);
   },
 
   getScriptContext: function(aDOMWindow, aScriptURL) {
