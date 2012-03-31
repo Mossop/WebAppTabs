@@ -18,30 +18,45 @@
 
   <popupset id="mainPopupSet">
     <panel id="webapptabs-webapp-panel" type="arrow" orient="vertical">
-     <grid flex="1">
+      <grid flex="1">
         <columns>
           <column/>
           <column flex="1" align="stretch"/>
-       </columns>
-       <rows>
-         <row>
-           <label value="&name.label;"/>
-           <textbox id="webapptabs-name-textbox" flex="1" placeholder="&name.placeholder;"/>
-         </row>
-         <row>
-           <label value="&href.label;"/>
-           <textbox id="webapptabs-href-textbox" flex="1" placeholder="&href.placeholder;"/>
-         </row>
-       </rows>
-     </grid>
+        </columns>
+        <rows>
+          <row>
+            <label value="&name.label;"/>
+            <textbox id="webapptabs-name-textbox" flex="1" placeholder="&name.placeholder;"/>
+          </row>
+          <row>
+            <label value="&href.label;"/>
+            <textbox id="webapptabs-href-textbox" flex="1" placeholder="&href.placeholder;"/>
+          </row>
+        </rows>
+      </grid>
+
       <hbox pack="end">
         <button id="webapptabs-add-button" label="&add.label;"/>
         <button id="webapptabs-remove-button" label="&remove.label;"/>
       </hbox>
     </panel>
+
+    <panel id="webapptabs-intro" type="arrow" orient="vertical" align="stretch">
+      <hbox id="webapptabs-intro-titlebox" align="end">
+        <image id="webapptabs-intro-icon"/>
+        <spacer flex="1"/>
+        <label id="webapptabs-intro-title" value="&intro.title;"/>
+      </hbox>
+      <vbox align="end">
+        <description>&intro.main;</description>
+        <description>&intro.adding;</description>
+        <description>&intro.changing;</description>
+      </vbox>
+    </panel>
+
     <tooltip id="webapptabs-tooltip">
       <label id="webapptabs-tooltip-name"/>
-      <label>&tooltip.context;</label>
+      <label value="&tooltip.context;"/>
     </tooltip>
   </popupset>
 

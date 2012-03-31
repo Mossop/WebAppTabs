@@ -15,3 +15,8 @@
 <!ENTITY tooltip.context  "Right click to modify…">
 
 <!ENTITY create.label     "Create a new webapp…">
+
+<!ENTITY intro.title      "WebApp Tabs">
+<!ENTITY intro.main       "All your webapps are listed up here.">
+<!ENTITY intro.adding     "Click the plus to add new one.">
+<!ENTITY intro.changing   "Right-click to change things.">

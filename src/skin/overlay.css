@@ -14,3 +14,19 @@
 #webapptabs-create-button {
   list-style-image: url(chrome://webapptabs/skin/chalkwork/add.png);
 }
+
+#webapptabs-intro-icon {
+  height: 48px;
+  width: 48px;
+  list-style-image: url(chrome://webapptabs/skin/icon48.png);
+  margin-left: 8px;
+}
+
+#webapptabs-intro-title {
+  font-size: 150%;
+  margin-bottom: 5px;
+}
+
+#webapptabs-intro-titlebox {
+  margin-bottom: 0.5em;
+}

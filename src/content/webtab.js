@@ -33,7 +33,8 @@ const webtabs = {
     this.buttonContainer.addEventListener("dragend", this.onDragEnd.bind(this), false);
     this.buttonContainer.addEventListener("drop", this.onDrop.bind(this), false);
 
-    document.getElementById("webapptabs-create-button").addEventListener("command", function(aEvent) {
+    let createButton = document.getElementById("webapptabs-create-button");
+    createButton.addEventListener("command", function(aEvent) {
       webtabs.editWebApp(aEvent.target, null);
     }, false);
 
@@ -88,6 +89,23 @@ const webtabs = {
     tabmail.tabInfo.forEach(this.onTabOpened.bind(this));
 
     tabmail.registerTabMonitor(this);
+
+    AddonManager.getAddonByID("webapptabs@fractalbrew.com", function(aAddon) {
+      let lastVersion = "0";
+      try {
+        lastVersion = Services.prefs.getCharPref("extensions.webapptabs.lastVersion");
+      }
+      catch (e) { };
+      Services.prefs.setCharPref("extensions.webapptabs.lastVersion", aAddon.version);
+
+      if (Services.vc.compare(lastVersion, "3.0a1") < 0) {
+        setTimeout(function() {
+          let rect = createButton.getBoundingClientRect();
+          let panel = document.getElementById("webapptabs-intro");
+          panel.openPopup(createButton, "after_end", -rect.width / 2, 0, false, false, null);
+        }, 200);
+      }
+    });
   },
 
   onUnload: function() {

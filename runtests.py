@@ -147,6 +147,8 @@ class TestProfile(ThunderbirdProfile):
   preferences = {
     # Turn on debug logging
     'extensions.webapptabs.loglevel': 0,
+    # Turn off any first-run effects
+    'extensions.webapptabs.lastVersion': '*',
     # Don't automatically update the application
     'app.update.enabled': False,
     # Only install add-ons from the profile and the application scope

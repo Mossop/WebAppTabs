@@ -4,25 +4,21 @@
 
 const WEBAPPS = [{
   'id': 'Google_Calendar',
-  'tooltiptext': 'Google Calendar',
   'image': 'https://calendar.google.com/googlecalendar/images/favicon.ico',
 }, {
   'id': 'Facebook',
-  'tooltiptext': 'Facebook',
   'image': 'https://www.facebook.com/favicon.ico',
 }, {
   'id': 'Google+',
-  'tooltiptext': 'Google+',
   'image': 'https://ssl.gstatic.com/s2/oz/images/favicon.ico',
 }, {
   'id': 'Twitter',
-  'tooltiptext': 'Twitter',
 }];
 
 function testBasicState() {
   let hbox = document.getElementById("webapptabs-buttons");
   ok(hbox, "Overlay element created");
-  is(hbox.parentNode.id, "tabmail-buttons", "Overlay applied in the right place");
+  is(hbox.parentNode.parentNode.id, "tabmail-buttons", "Overlay applied in the right place");
 
   is(hbox.childNodes.length, WEBAPPS.length, "Created the right number of webapps");
   let webapp = hbox.firstChild;
