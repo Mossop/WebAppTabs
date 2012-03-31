@@ -271,15 +271,23 @@ addons = [
 ]
 
 manifest = TestManifest([os.path.join(basedir, 'tests/tests.ini')])
-tests = manifest.active_tests(disabled=False)
+all_tests = manifest.active_tests(disabled=False)
 profile = TestProfile(addons=addons)
 
 parser = OptionParser()
 parser.add_option('-b', "--binary",
                   dest="binary", help="Binary path.",
-                   metavar=None, default=None)
+                  metavar=None, default=None)
 
 (options, args) = parser.parse_args(sys.argv[1:])
+
+if len(args) > 0:
+  tests = []
+  for test in all_tests:
+    if test["name"] in args:
+      tests.append(test)
+else:
+  tests = all_tests
 
 runner = ThunderbirdRunner(profile=profile, process_class=TestProcess,
                            binary=options.binary)
