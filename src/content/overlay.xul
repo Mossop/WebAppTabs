@@ -39,6 +39,10 @@
         <button id="webapptabs-remove-button" label="&remove.label;"/>
       </hbox>
     </panel>
+    <tooltip id="webapptabs-tooltip">
+      <label id="webapptabs-tooltip-name"/>
+      <label>&tooltip.context;</label>
+    </tooltip>
   </popupset>
 
   <hbox id="tabmail-buttons">

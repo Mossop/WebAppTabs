@@ -56,6 +56,11 @@ const webtabs = {
       panel.hidePopup();
     });
 
+    document.getElementById("webapptabs-tooltip").addEventListener("popupshowing", function() {
+      let desc = document.tooltipNode.desc;
+      document.getElementById("webapptabs-tooltip-name").value = desc.name;
+    });
+
     ConfigManager.webappList.forEach(function(aDesc) {
       this.createWebAppButton(aDesc);
     }, this);
@@ -141,7 +146,7 @@ const webtabs = {
     button.setAttribute("id", aDesc.id);
     button.setAttribute("class", "webtab");
     button.setAttribute("image", aDesc.icon);
-    button.setAttribute("tooltiptext", aDesc.name);
+    button.setAttribute("tooltip", "webapptabs-tooltip");
     this.buttonContainer.insertBefore(button, aBefore);
     button.desc = aDesc;
 
