@@ -16,6 +16,15 @@ function externalURLOpened(aURL, aWindowContext) {
   return true;
 }
 
+function waitForEvent(aElement, aEvent, aCallback, aCapture) {
+  waitForExplicitFinish();
+  aElement.addEventListener(aEvent, function(aEv) {
+    aElement.removeEventListener(aEvent, arguments.callee, aCapture);
+    safeCall(aCallback.bind(null, aEv));
+    finish();
+  }, aCapture);
+}
+
 function getAddon(aCallback) {
   waitForExplicitFinish();
   AddonManager.getAddonByID("webapptabs@fractalbrew.com", function(aAddon) {
@@ -90,11 +99,8 @@ function waitForNewTab(aCallback) {
 }
 
 function waitForTabLoad(aTab, aCallback) {
-  waitForExplicitFinish();
-  aTab.browser.addEventListener("pageshow", function() {
-    aTab.browser.removeEventListener("pageshow", arguments.callee, true);
+  waitForEvent(aTab.browser, "pageshow", function() {
     waitForFocus(aTab.browser.contentWindow, aCallback.bind(null, aTab));
-    finish();
   }, true);
 }
 
@@ -102,15 +108,6 @@ function closeTab(aTab, aCallback) {
   document.getElementById("tabmail").closeTab(aTab);
   if (aCallback)
     safeCall(aCallback);
-}
-
-function waitForEvent(aElement, aEvent, aCallback, aCapture) {
-  waitForExplicitFinish();
-  aElement.addEventListener(aEvent, function(aEv) {
-    aElement.removeEventListener(aEvent, arguments.callee, aCapture);
-    safeCall(aCallback.bind(null, aEv));
-    finish();
-  }, aCapture);
 }
 
 function waitForExternalLoad(aCallback) {
@@ -123,13 +120,8 @@ function waitForExternalLoad(aCallback) {
 }
 
 function openContextMenu(aTarget, aCallback) {
-  waitForExplicitFinish();
   let context = document.getElementById("mailContext");
-  context.addEventListener("popupshown", function() {
-    context.removeEventListener("popupshown", arguments.callee, false);
-    aCallback();
-    finish();
-  }, false);
+  waitForEvent(context, "popupshown", aCallback);
 
   var rect = aTarget.getBoundingClientRect();
   var left = rect.left + rect.width / 2;
@@ -140,13 +132,7 @@ function openContextMenu(aTarget, aCallback) {
 }
 
 function closeContextMenu(aCallback) {
-  waitForExplicitFinish();
   let context = document.getElementById("mailContext");
-  context.addEventListener("popuphidden", function() {
-    context.removeEventListener("popuphidden", arguments.callee, false);
-    aCallback();
-    finish();
-  }, false);
-
+  waitForEvent(context, "popuphidden", aCallback);
   context.hidePopup();
 }

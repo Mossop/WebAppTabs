@@ -13,7 +13,7 @@ const TESTAPPS = [{
 
 Components.utils.import("resource://webapptabs/modules/ConfigManager.jsm");
 
-var gTab, gListener, gEventListener, gDoc;
+var gTab, gListener, gEventListener, gFrame;
 
 function init_test() {
   ConfigManager.webappList = TESTAPPS;
@@ -27,16 +27,9 @@ function init_test() {
     is(gTab.browser.currentURI.spec, "http://localhost:8080/webapp2/framed.html",
        "Should have loaded the right url");
 
-    let frame = gTab.browser.contentDocument.getElementById("frame");
-    is(frame.src, "http://localhost:8080/webapp1/",
-       "Should have loaded the right inner url");
-    gDoc = frame.contentDocument;
+    gFrame = gTab.browser.contentDocument.getElementById("frame");
 
     gListener = new TabListener();
-    gEventListener = function() {
-      unexpected("Should not have seen the webapp tab reload");
-    }
-    gTab.browser.addEventListener("load", gEventListener, true);
 
     run_next_test();
   });
@@ -46,13 +39,36 @@ function init_test() {
 
 function finish_test() {
   gListener.destroy();
-  gTab.browser.removeEventListener("load", gEventListener, true);
   closeTab(gTab);
 }
 
-function click_link(aLink) {
+function click_internal_link(aLink) {
+  is(gFrame.contentDocument.documentURIObject.spec,
+     "http://localhost:8080/webapp1/",
+     "Should have the right inner url");
+
   info("Testing link " + aLink);
-  let link = gDoc.getElementById(aLink);
+  let link = gFrame.contentDocument.getElementById(aLink);
+  ok(link, "Link should exist");
+  let expected = link.href;
+
+  waitForTabLoad(gTab, function(aURL) {
+    is(gFrame.contentDocument.documentURIObject.spec,
+       expected, "Should have loaded the link in the frame");
+
+    waitForTabLoad(gTab, run_next_test);
+    gTab.browser.goBack();
+  });
+  clickElement(link);
+}
+
+function click_external_link(aLink) {
+  is(gFrame.contentDocument.documentURIObject.spec,
+     "http://localhost:8080/webapp1/",
+     "Should have the right inner url");
+
+  info("Testing link " + aLink);
+  let link = gFrame.contentDocument.getElementById(aLink);
   ok(link, "Link should exist");
 
   waitForExternalLoad(function(aURL) {
@@ -62,7 +78,12 @@ function click_link(aLink) {
   clickElement(link);
 }
 
+let links = ["test2-1"]; //test3-1 should work
+links.forEach(function(aLink) {
+  add_test(click_internal_link.bind(null, aLink));
+});
+
 let links = ["test3-2", "test3-3", "test3-4"];
 links.forEach(function(aLink) {
-  add_test(click_link.bind(null, aLink));
+  add_test(click_external_link.bind(null, aLink));
 });
