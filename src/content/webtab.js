@@ -437,6 +437,9 @@ const webtabs = {
               return;
 
             let webapp = ConfigManager.getWebAppForURL(aTabInfo.browser.contentDocument.documentURIObject);
+            if (!webapp)
+              return;
+
             webapp.icon = icon;
             ConfigManager.persistPrefs();
 
