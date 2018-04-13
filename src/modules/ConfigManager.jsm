@@ -18,6 +18,14 @@ const EXTPREFNAME = "extensions.webapptabs.webapps";
 
 const WEBAPP_SCHEMA = 1;
 const DEFAULT_WEBAPPS = [{
+  'name': 'Outlook',
+  'href': 'https://outlook.live.com/',
+  'icon': 'https://outlook.live.com/owa/favicon.ico',
+}, {
+  'name': 'Gmail',
+  'href': 'https://mail.google.com/',
+  'icon': 'https://www.google.com/gmail/about/images/favicon.ico',
+}, {
   'name': 'Google Calendar',
   'href': 'https://calendar.google.com/',
   'icon': 'https://calendar.google.com/googlecalendar/images/favicon.ico',
