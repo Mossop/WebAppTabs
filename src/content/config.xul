@@ -13,7 +13,7 @@
 <?xml-stylesheet href="chrome://webapptabs/skin/config.css"?>
 
 <window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        title="&title;" style="width: 400px; height: 300px;"
+        title="&title;" style="width: 640px; height: 300px;"
         onload="config.load()" onunload="config.unload()">
   <script type="text/javascript" src="config.js"/>
 
@@ -40,12 +40,17 @@
           <label value="&lbl.href;"/>
           <textbox id="txt_href" oninput="config.input()" flex="1" placeholder="&txt.href.placeholder;"/>
         </row>
+        <row>
+          <label value="&lbl.icon;"/>
+          <textbox id="txt_icon" oninput="config.input()" flex="1" placeholder="&txt.icon.placeholder;"/>
+        </row>
       </rows>
     </grid>
 
     <vbox>
       <button id="btn_add" oncommand="config.add()" label="&btn.add.label;"/>
       <button id="btn_remove" oncommand="config.remove()" label="&btn.remove.label;"/>
+      <button id="btn_reset" oncommand="config.reset()" label="&btn.reset.label;"/>
     </vbox>
   </hbox>
 </window>

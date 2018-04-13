@@ -1,0 +1,15 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/.  -->
+
+<!ENTITY title                   "WebApp Tabs - Opções">
+
+<!ENTITY lbl.name                "Nome:">
+<!ENTITY txt.name.placeholder    "Insira o nome do website…">
+<!ENTITY lbl.href                "Endereço:">
+<!ENTITY txt.href.placeholder    "Insira o endereço do website…">
+<!ENTITY lbl.icon                "URL do Ícone:">
+<!ENTITY txt.icon.placeholder    "Insira a URL do favicon ou deixe em branco para obter automaticamente…">
+<!ENTITY btn.add.label           "Adicionar">
+<!ENTITY btn.remove.label        "Remover">
+<!ENTITY btn.reset.label         "Restaurar o padrão">

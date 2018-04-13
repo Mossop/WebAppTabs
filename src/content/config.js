@@ -16,6 +16,8 @@ const config = {
   load: function() {
     this.list = document.getElementById("list_webapps");
 
+    while (this.list.itemCount > 0)
+      this.list.removeItemAt(0);
     ConfigManager.webappList.forEach(function(aDesc) {
       this.addWebAppItem(aDesc);
     }, this);
@@ -30,18 +32,26 @@ const config = {
 
   add: function() {
     let href = document.getElementById("txt_href").value;
+    let icon = document.getElementById("txt_icon").value;
+
     let URIFixup = Cc["@mozilla.org/docshell/urifixup;1"].
                    getService(Ci.nsIURIFixup);
     href = URIFixup.createFixupURI(href, Ci.nsIURIFixup.FIXUP_FLAG_NONE).spec;
+    icon = icon
+      ? URIFixup.createFixupURI(icon, Ci.nsIURIFixup.FIXUP_FLAG_NONE).spec
+      : "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(href)
+      ;
 
     let desc = {
       name: document.getElementById("txt_name").value,
       href: href,
-      icon: "http://getfavicon.appspot.com/" + href
+      icon: icon
     };
 
     document.getElementById("txt_name").value = "";
     document.getElementById("txt_href").value = "";
+    document.getElementById("txt_icon").value = "";
+    this.input();
 
     ConfigManager.webappList.push(desc);
     ConfigManager.updatePrefs();
@@ -54,6 +64,13 @@ const config = {
     ConfigManager.webappList.splice(pos, 1);
     this.list.removeChild(item);
     ConfigManager.updatePrefs();
+    this.list.clearSelection();
+  },
+
+  reset: function() {
+    ConfigManager.loadDefaultPrefs();
+    ConfigManager.updatePrefs();
+    this.load();
   },
 
   input: function() {
