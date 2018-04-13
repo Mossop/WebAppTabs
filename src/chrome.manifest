@@ -4,4 +4,5 @@
 
 content   webapptabs   content/
 locale    webapptabs   en-US         locale/en-US/
+locale    webapptabs   pt-BR         locale/pt-BR/
 skin      webapptabs   classic/1.0   skin/
