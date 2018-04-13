@@ -140,8 +140,11 @@ const ConfigManager = {
     catch (e) {
       ERROR("Failed to read webapps from config", e);
     }
+    this.loadDefaultPrefs();
+  },
 
-    this.webappList = DEFAULT_WEBAPPS;
+  loadDefaultPrefs: function() {
+    this.webappList = DEFAULT_WEBAPPS.slice();
     this.webappList.forEach(function(aDesc) {
       if (!aDesc.id)
         aDesc.id = aDesc.name.replace(' ', '_', 'g');

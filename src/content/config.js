@@ -67,6 +67,12 @@ const config = {
     this.list.clearSelection();
   },
 
+  reset: function() {
+    ConfigManager.loadDefaultPrefs();
+    ConfigManager.updatePrefs();
+    this.load();
+  },
+
   input: function() {
     let enabled = document.getElementById("txt_name").value != "" &&
                   document.getElementById("txt_href").value != "";

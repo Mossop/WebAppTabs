@@ -50,6 +50,7 @@
     <vbox>
       <button id="btn_add" oncommand="config.add()" label="&btn.add.label;"/>
       <button id="btn_remove" oncommand="config.remove()" label="&btn.remove.label;"/>
+      <button id="btn_reset" oncommand="config.reset()" label="&btn.reset.label;"/>
     </vbox>
   </hbox>
 </window>

@@ -12,3 +12,4 @@
 <!ENTITY txt.icon.placeholder    "Enter the favicon URL or leave blank to obtain automatically…">
 <!ENTITY btn.add.label           "Add">
 <!ENTITY btn.remove.label        "Remove">
+<!ENTITY btn.reset.label         "Reset to default">
